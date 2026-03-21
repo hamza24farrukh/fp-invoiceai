@@ -84,13 +84,14 @@ class TestConvert:
 
 
 class TestMatchWithInvoices:
-    """Test transaction-invoice matching."""
+    """Test transaction-invoice matching with currency-aware algorithm."""
 
-    def test_match_by_amount(self):
+    def test_match_same_currency_exact_amount(self):
+        """Test matching when invoice and bank statement are in the same currency."""
         converter = BankStatementConverter()
         statement = pd.DataFrame({
             'date': ['2024-01-15'],
-            'description': ['Payment'],
+            'description': ['Payment to supplier'],
             'reference': ['REF001'],
             'debit': [100.00],
             'credit': [None],
@@ -102,13 +103,104 @@ class TestMatchWithInvoices:
             'invoice_number': 'INV-001',
             'date': '2024-01-14',
             'amount': 100.00,
-            'total_euro': 100.00
+            'currency': 'PKR',
+            'is_income': 0
         }]
 
-        result = converter.match_with_invoices(statement, invoices)
+        result = converter.match_with_invoices(statement, invoices, bank_currency='PKR')
         assert 'matched_supplier' in result.columns
-        # Should match by amount + date proximity
         assert result.iloc[0]['matched_supplier'] == 'Test Supplier'
+        assert result.iloc[0]['match_confidence'] >= 50
+
+    def test_match_cross_currency_with_transfer_fee(self):
+        """Test: 520.89 USD invoice should match 139898.58 PKR bank credit (3.56% SWIFT fee deduction)."""
+        converter = BankStatementConverter()
+        statement = pd.DataFrame({
+            'date': ['2026-02-24'],
+            'description': ['Inward Telex Payment G1460485528101'],
+            'reference': ['FT26049P1M0S'],
+            'debit': [None],
+            'credit': [139898.58],
+            'balance': [140957.58]
+        })
+
+        invoices = [{
+            'transactor': 'Kodecraft',
+            'invoice_number': '2026',
+            'date': '2026-02-15',
+            'amount': 520.89,
+            'currency': 'USD',
+            'is_income': 1
+        }]
+
+        result = converter.match_with_invoices(statement, invoices, bank_currency='PKR')
+        assert result.iloc[0]['matched_supplier'] == 'Kodecraft'
+        # Should have reasonable confidence (amount ~3.56% diff + date ~9 days)
+        assert result.iloc[0]['match_confidence'] >= 55
+        assert result.iloc[0]['match_confidence'] <= 80
+        assert result.iloc[0]['converted_invoice_amount'] > 0
+        assert result.iloc[0]['amount_difference_pct'] > 0
+
+    def test_no_match_when_bank_exceeds_invoice(self):
+        """Bank amount significantly exceeding converted invoice should NOT match."""
+        converter = BankStatementConverter()
+        statement = pd.DataFrame({
+            'date': ['2024-01-15'],
+            'description': ['Large deposit'],
+            'reference': ['REF001'],
+            'debit': [None],
+            'credit': [500000.00],
+            'balance': [600000.00]
+        })
+
+        invoices = [{
+            'transactor': 'Small Vendor',
+            'invoice_number': 'INV-001',
+            'date': '2024-01-14',
+            'amount': 100.00,
+            'currency': 'USD',
+            'is_income': 1
+        }]
+
+        result = converter.match_with_invoices(statement, invoices, bank_currency='PKR')
+        assert result.iloc[0]['matched_supplier'] is None
+
+    def test_debit_matches_expense_credit_matches_income(self):
+        """Debit transactions should only match expense invoices, credits should match income."""
+        converter = BankStatementConverter()
+        statement = pd.DataFrame({
+            'date': ['2024-01-15', '2024-01-15'],
+            'description': ['Payment out', 'Payment in'],
+            'reference': ['REF001', 'REF002'],
+            'debit': [5000.00, None],
+            'credit': [None, 5000.00],
+            'balance': [95000.00, 100000.00]
+        })
+
+        expense_invoice = {
+            'transactor': 'Expense Vendor',
+            'invoice_number': 'EXP-001',
+            'date': '2024-01-14',
+            'amount': 5000.00,
+            'currency': 'PKR',
+            'is_income': 0
+        }
+        income_invoice = {
+            'transactor': 'Income Client',
+            'invoice_number': 'INC-001',
+            'date': '2024-01-14',
+            'amount': 5000.00,
+            'currency': 'PKR',
+            'is_income': 1
+        }
+
+        result = converter.match_with_invoices(
+            statement, [expense_invoice, income_invoice], bank_currency='PKR'
+        )
+        # Debit row should match expense invoice
+        assert result.iloc[0]['matched_supplier'] == 'Expense Vendor'
+        # Credit row should match income invoice
+        assert result.iloc[1]['matched_supplier'] == 'Income Client'
 
     def test_match_empty_invoices(self):
         converter = BankStatementConverter()
@@ -123,6 +215,23 @@ class TestMatchWithInvoices:
 
         result = converter.match_with_invoices(statement, [])
         assert result.iloc[0]['matched_supplier'] is None
+
+    def test_match_output_columns_present(self):
+        """Verify all new output columns are present in results."""
+        converter = BankStatementConverter()
+        statement = pd.DataFrame({
+            'date': ['2024-01-15'],
+            'description': ['Payment'],
+            'reference': ['REF001'],
+            'debit': [100.00],
+            'credit': [None],
+            'balance': [900.00]
+        })
+
+        result = converter.match_with_invoices(statement, [])
+        for col in ['matched_supplier', 'matched_invoice_number', 'match_confidence',
+                     'match_method', 'converted_invoice_amount', 'amount_difference_pct', 'match_details']:
+            assert col in result.columns, f"Missing column: {col}"
 
 
 class TestDetectFormat:

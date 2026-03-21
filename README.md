@@ -26,7 +26,7 @@ InvoiceAI is a Flask-based web application that demonstrates the orchestration o
 
 | Model | Architecture | Data Domain | Role in System | Provider |
 |-------|-------------|-------------|----------------|----------|
-| **Gemini 2.0 Flash** | Multimodal LLM | Vision + Text | Primary invoice field extraction — processes PDF pages and images directly using vision capabilities, extracts all structured fields (supplier, date, amounts, VAT, currency, invoice number) | Google AI |
+| **Gemini 3 Flash Preview** | Multimodal LLM | Vision + Text | Primary invoice field extraction — processes PDF pages and images directly using vision capabilities, extracts all structured fields (supplier, date, amounts, VAT, currency, invoice number) | Google AI |
 | **Mistral Medium** | Large Language Model | Text + Vision | Payee name specialist — independently extracts the supplier/vendor name and acts as a "judge" to validate or override Gemini's payee extraction using a confidence-based voting system | Mistral AI |
 
 ### Local Models (Run Offline, No API Keys Needed)
@@ -42,7 +42,7 @@ InvoiceAI is a Flask-based web application that demonstrates the orchestration o
 
 | Data Domain | Models Used | Input | Output |
 |-------------|------------|-------|--------|
-| **Vision + Text** | Gemini 2.0 Flash, Mistral Medium | PDF pages, images | Structured JSON (supplier, amounts, dates, etc.) |
+| **Vision + Text** | Gemini 3 Flash Preview, Mistral Medium | PDF pages, images | Structured JSON (supplier, amounts, dates, etc.) |
 | **Image to Text** | Tesseract OCR | Scanned documents, photos | Raw text string |
 | **Image Classification** | DiT (RVL-CDIP) | Document images | Document type + confidence score |
 | **Audio to Text** | OpenAI Whisper | MP3, WAV, M4A, OGG, FLAC, WebM | Transcribed text + detected language |
@@ -113,8 +113,8 @@ When a user uploads an invoice, the system processes it through a multi-stage pi
 
 | Step | Model(s) | What Happens | Fallback Trigger |
 |------|----------|-------------|------------------|
-| **1. Vision Extraction** | Gemini 2.0 Flash + Mistral Medium | Gemini receives the full PDF page or image and extracts all fields. Simultaneously, Mistral independently extracts the payee/supplier name. A "judge" comparison validates the payee — if both models agree, that name is used; if they disagree, Mistral's extraction takes priority (specialised for payee detection). | Gemini API quota exceeded (429), API key missing, network error |
-| **2. Text + Cloud AI** | Gemini 2.0 Flash (text mode) | Falls back to sending the OCR-extracted plain text (from Tesseract or pdfplumber) to Gemini as a text prompt instead of a vision request. This uses less API quota and works when vision fails but text is available. | Same as Step 1 — Gemini text also fails |
+| **1. Vision Extraction** | Gemini 3 Flash Preview + Mistral Medium | Gemini receives the full PDF page or image and extracts all fields. Simultaneously, Mistral independently extracts the payee/supplier name. A "judge" comparison validates the payee — if both models agree, that name is used; if they disagree, Mistral's extraction takes priority (specialised for payee detection). | Gemini API quota exceeded (429), API key missing, network error |
+| **2. Text + Cloud AI** | Gemini 3 Flash Preview (text mode) | Falls back to sending the OCR-extracted plain text (from Tesseract or pdfplumber) to Gemini as a text prompt instead of a vision request. This uses less API quota and works when vision fails but text is available. | Same as Step 1 — Gemini text also fails |
 | **3. Local Extraction** | Ollama Phi-3.5 | Sends OCR text to the locally-running Ollama server. If a payee name was already extracted by Mistral in Step 1 (preserved via the `mistral_payee` dict pattern), it is passed as a hint and forcibly applied to the results, ensuring payee accuracy even when the local model hallucinates. | Ollama server not running, model not installed |
 
 ### Processing Modes
@@ -492,7 +492,7 @@ evaluator.load_ground_truth()
 
 # Evaluate an extraction model
 result = evaluator.evaluate_extraction_model(
-    model_name="Gemini 2.0 Flash",
+    model_name="Gemini 3 Flash Preview",
     extract_fn=my_extraction_function
 )
 

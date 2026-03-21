@@ -5,94 +5,143 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Bank Statement Processing Results</h1>
-    
+
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Processing Complete</h4>
+                    <h4 class="mb-0"><i class="bi bi-check-circle me-2"></i>Processing Complete</h4>
                 </div>
                 <div class="card-body">
                     {% with messages = get_flashed_messages() %}
                         {% if messages %}
                             {% for message in messages %}
-                                <div class="alert alert-warning" role="alert">
+                                <div class="alert alert-info" role="alert">
                                     {{ message }}
                                 </div>
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Your bank statement has been successfully processed and enhanced with detailed descriptions.
-                    </div>
-                    
+
                     <div class="card mb-4">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <div class="card-header bg-light">
                             <h5 class="mb-0">Processing Statistics</h5>
-                            {% if session.bank_statement_stats.processing_type %}
-                                <span class="badge bg-primary">{{ session.bank_statement_stats.processing_type }}</span>
-                            {% endif %}
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <p><strong>Original File:</strong> {{ session.bank_statement_stats.original_file }}</p>
-                                    <p><strong>Enhanced File:</strong> {{ session.bank_statement_stats.processed_file }}</p>
+                                    <p><strong>Original File:</strong> {{ session.bank_statement_stats.original_file or 'N/A' }}</p>
+                                    <p><strong>Detected Format:</strong> {{ session.bank_statement_stats.bank_format or 'Auto-detected' }}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><strong>Transactions Processed:</strong> {{ session.bank_statement_stats.total_transactions }}</p>
-                                    <p><strong>Transactions Matched/Extracted:</strong> {{ session.bank_statement_stats.matched_transactions }} ({{ session.bank_statement_stats.match_rate }})</p>
+                                    <p><strong>Total Transactions:</strong> {{ session.bank_statement_stats.total_transactions or 0 }}</p>
+                                    <p><strong>Matched to Invoices:</strong> {{ session.bank_statement_stats.matched_transactions or 0 }} ({{ session.bank_statement_stats.match_rate or '0%' }})</p>
+                                    {% if session.bank_statement_stats.avg_confidence %}
+                                    <p><strong>Avg Match Confidence:</strong> {{ session.bank_statement_stats.avg_confidence }}%</p>
+                                    {% endif %}
                                 </div>
                             </div>
+
+                            {% if session.bank_statement_stats.total_transactions and session.bank_statement_stats.total_transactions > 0 %}
+                            <div class="progress mt-3" style="height: 25px;">
+                                {% set match_pct = ((session.bank_statement_stats.matched_transactions or 0) / session.bank_statement_stats.total_transactions * 100) %}
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: {{ match_pct }}%"
+                                     aria-valuenow="{{ match_pct }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ match_pct | int }}% matched
+                                </div>
+                                <div class="progress-bar bg-warning" role="progressbar"
+                                     style="width: {{ 100 - match_pct }}%"
+                                     aria-valuenow="{{ 100 - match_pct }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ (100 - match_pct) | int }}% unmatched
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="text-center mt-4">
-                        <a href="{{ url_for('download_processed_statement', filename=session.processed_file) }}" class="btn btn-primary">
-                            <i class="fas fa-download me-2"></i> Download Enhanced Statement
+                        {% if session.processed_file %}
+                        <a href="{{ url_for('download_processed_statement', filename=session.processed_file) }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-download me-2"></i> Download Processed Statement
                         </a>
+                        {% endif %}
                         <a href="{{ url_for('process_bank_statements') }}" class="btn btn-secondary ms-2">
-                            <i class="fas fa-file-excel me-2"></i> Process Another Statement
+                            <i class="bi bi-arrow-repeat me-2"></i> Process Another Statement
                         </a>
                         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">
-                            <i class="fas fa-home me-2"></i> Back to Home
+                            <i class="bi bi-house me-2"></i> Back to Home
                         </a>
                     </div>
                 </div>
             </div>
-            
+
             <div class="card mt-4">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">What's Next?</h4>
+                    <h4 class="mb-0"><i class="bi bi-info-circle me-2"></i>How Matching Works</h4>
                 </div>
                 <div class="card-body">
-                    <p>The enhanced bank statement contains multiple improvements:</p>
-                    
-                    <h5>New Columns</h5>
+                    <p>The processed bank statement includes the following enriched columns:</p>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Payee</strong></td>
+                                    <td>Supplier/recipient identified by matching against your invoice database</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Category</strong></td>
+                                    <td>Service category from the matched supplier record</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Transaction Type</strong></td>
+                                    <td>Transaction classification from the matched invoice</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>matched_supplier</strong></td>
+                                    <td>The supplier name that was matched, or empty if no match was found</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>match_confidence</strong></td>
+                                    <td>0-100% score indicating how confident the algorithm is about the match</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>converted_invoice_amount</strong></td>
+                                    <td>The invoice amount converted to the bank statement's currency for comparison</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>amount_difference_pct</strong></td>
+                                    <td>Percentage difference between converted invoice amount and bank transaction (accounts for transfer fees)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>match_details</strong></td>
+                                    <td>Human-readable breakdown showing the currency conversion and comparison</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h5 class="mt-3">Matching Algorithm</h5>
+                    <p>Each transaction is scored against all invoices using four weighted criteria:</p>
                     <ul>
-                        <li><strong>Payee</strong>: Automatically identifies the supplier/recipient based on invoice matching</li>
-                        <li><strong>Category</strong>: Service category from the matched invoice</li>
-                        <li><strong>Transaction Type</strong>: Transaction type from the matched invoice (e.g., EXPENSES with VAT, BANK FEES)</li>
-                        <li><strong>Detailed Description</strong>: Combined information including supplier, invoice number, invoice date, category, and reference</li>
-                        <li><strong>Invoice Status</strong>: Indicates if each transaction was matched with an invoice or needs review</li>
+                        <li><strong>Amount Closeness (55%)</strong> — converts invoice amount to bank currency, then compares. Allows up to 15% deduction for SWIFT fees, intermediary charges, and local taxes on international transfers</li>
+                        <li><strong>Date Proximity (20%)</strong> — how close the transaction date is to the invoice date (up to 30 day window for international transfers)</li>
+                        <li><strong>Supplier Name (15%)</strong> — checks if the supplier name appears in the bank transaction description</li>
+                        <li><strong>Invoice Number (10%)</strong> — checks if the invoice number appears in the transaction reference</li>
                     </ul>
-                    
-                    <h5>Special Features</h5>
-                    <ul>
-                        {% if session.bank_statement_stats.processing_type and 'Advanced AI' in session.bank_statement_stats.processing_type %}
-                        <li><strong class="text-success">Advanced AI Payee Extraction</strong> <span class="badge bg-success">New!</span>: Uses Gemini 2.0 Flash model to intelligently extract payee names from bank references with 85% accuracy</li>
-                        {% endif %}
-                        <li><strong class="text-warning">⚠️ NEEDS ADMIN REVIEW Sheet</strong> <span class="badge bg-warning text-dark">New!</span>: Transactions >17 EUR without matching invoices are flagged and listed in a dedicated sheet for administrative review</li>
-                        <li><strong>Auto Bank Fees Sheet</strong>: Transactions ≤17 EUR are automatically classified as bank fees and grouped in a separate sheet for easy verification</li>
-                        <li><strong>Smart Matching</strong>: Matches transactions with invoices using reference numbers, amounts, dates, and descriptions</li>
-                        <li><strong>Special Handling</strong>: Automatically detects bank fees and common payment services</li>
-                        <li><strong>Invoice References</strong>: Includes invoice numbers and dates in descriptions when available</li>
-                        <li><strong>Visual Indicators</strong>: Warning icons (⚠️) highlight transactions that need manual verification</li>
-                    </ul>
-                    
-                    <p>These enhancements make it easier to reconcile your financial transactions, identify missing documentation, and prepare accurate financial reports.</p>
+                    <p>Matches require a minimum <strong>25% confidence</strong> score. Credit transactions are matched against income invoices, debit transactions against expense invoices.</p>
+
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Tip:</strong> Unmatched transactions may indicate missing invoices in your system. Upload the corresponding invoices first, then re-process the bank statement for better match rates.
+                    </div>
                 </div>
             </div>
         </div>

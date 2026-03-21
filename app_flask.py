@@ -105,7 +105,7 @@ def model_status():
 
     status = {
         'gemini': {
-            'name': 'Gemini 2.0 Flash',
+            'name': 'Gemini 3 Flash Preview',
             'available': bool(os.getenv('GOOGLE_API_KEY')),
             'type': 'cloud'
         },
@@ -894,11 +894,102 @@ def income():
                          current_year=current_year,
                          current_month=current_month)
 
+def _render_invoice_details(invoice):
+    """Shared helper to render invoice details for both ID-based and number-based routes."""
+    # Ensure transaction_type has a value for proper display
+    if not invoice.get('transaction_type'):
+        if invoice.get('is_income'):
+            invoice['transaction_type'] = 'INCOME'
+        else:
+            invoice['transaction_type'] = 'EXPENSE'
+
+    # Fetch supplier details to get expense categories and account details
+    supplier_info = None
+    if invoice.get('transactor'):
+        supplier_info = supplier_manager.get_supplier(invoice['transactor'])
+
+        # Add supplier details to the invoice data for the template
+        if supplier_info:
+            if 'category' in supplier_info:
+                invoice['expense_category'] = supplier_info['category']
+            elif 'categories' in supplier_info and supplier_info['categories']:
+                invoice['expense_category'] = ', '.join(supplier_info['categories'])
+            else:
+                invoice['expense_category'] = 'Not specified'
+
+    # Add currency conversion data for display
+    if 'vat' in invoice and 'vat_amount' not in invoice:
+        invoice['vat_amount'] = invoice['vat']
+
+    if invoice.get('vat') and 'tax_amount' not in invoice:
+        invoice['tax_amount'] = invoice['vat']
+
+    if 'total_amount' not in invoice:
+        amount = float(invoice.get('amount', 0) or 0)
+        vat = float(invoice.get('vat', 0) or invoice.get('vat_amount', 0) or 0)
+        invoice['total_amount'] = amount + vat
+
+    # Get account description (Kind of Transaction)
+    if supplier_info:
+        invoice['account_description'] = supplier_info.get('transaction_type', 'Not specified')
+        invoice['vat_number'] = supplier_info.get('vat_number', '')
+
+    # Ensure description is available
+    if not invoice.get('description') and invoice.get('notes'):
+        invoice['description'] = invoice['notes']
+    elif not invoice.get('description'):
+        invoice['description'] = 'No description available'
+
+    # Handle currency conversions for financial fields
+    currency = invoice.get('currency', 'PKR')
+
+    if invoice.get('amount'):
+        try:
+            invoice['amount_with_conversions'] = get_amount_with_conversions(invoice['amount'], currency)
+        except Exception as e:
+            app.logger.error(f"Error converting amount: {str(e)}")
+
+    if invoice.get('vat_amount'):
+        try:
+            invoice['vat_amount_with_conversions'] = get_amount_with_conversions(invoice['vat_amount'], currency)
+        except Exception as e:
+            app.logger.error(f"Error converting VAT amount: {str(e)}")
+
+    if invoice.get('total_amount'):
+        try:
+            invoice['total_amount_with_conversions'] = get_amount_with_conversions(invoice['total_amount'], currency)
+        except Exception as e:
+            app.logger.error(f"Error converting total amount: {str(e)}")
+
+    exchange_rates = get_exchange_rates_for_display()
+
+    app.logger.info(f"Displaying details for invoice ID: {invoice.get('id')}, number: {invoice.get('invoice_number')}")
+    return render_template('invoice_details.html',
+                          invoice=invoice,
+                          supplier_info=supplier_info,
+                          exchange_rates=exchange_rates)
+
+@app.route('/invoice/<int:invoice_id>')
+def invoice_details_by_id(invoice_id):
+    """
+    Display detailed information about a specific invoice by its unique database ID.
+
+    Args:
+        invoice_id: The unique database ID of the invoice
+    """
+    invoice = invoice_manager.get_invoice(invoice_id)
+    if not invoice:
+        flash(f"Invoice with ID {invoice_id} not found", "danger")
+        return redirect(url_for('invoices'))
+    # Reuse the same logic as invoice_details
+    return _render_invoice_details(invoice)
+
 @app.route('/invoice_details/<invoice_number>')
 def invoice_details(invoice_number):
     """
-    Display detailed information about a specific invoice.
-    
+    Display detailed information about a specific invoice by invoice number.
+    Kept for backward compatibility.
+
     Args:
         invoice_number: The invoice number to display details for
     """
@@ -906,90 +997,7 @@ def invoice_details(invoice_number):
     if not invoice:
         flash(f"Invoice {invoice_number} not found", "danger")
         return redirect(url_for('invoices'))
-    
-    # Ensure transaction_type has a value for proper display
-    if not invoice.get('transaction_type'):
-        if invoice.get('is_income'):
-            invoice['transaction_type'] = 'INCOME'
-        else:
-            invoice['transaction_type'] = 'EXPENSE'
-    
-    # Fetch supplier details to get expense categories and account details
-    supplier_info = None
-    if invoice.get('transactor'):
-        supplier_info = supplier_manager.get_supplier(invoice['transactor'])
-        
-        # Add supplier details to the invoice data for the template
-        if supplier_info:
-            # Get expense category from supplier (could be a single category or list of categories)
-            if 'category' in supplier_info:
-                invoice['expense_category'] = supplier_info['category']
-            elif 'categories' in supplier_info and supplier_info['categories']:
-                # Join multiple categories with commas
-                invoice['expense_category'] = ', '.join(supplier_info['categories'])
-            else:
-                invoice['expense_category'] = 'Not specified'
-    
-    # Add currency conversion data for display
-    # First ensure we have the right field names for backward compatibility
-    if 'vat' in invoice and 'vat_amount' not in invoice:
-        invoice['vat_amount'] = invoice['vat']
-    
-    # Make sure tax_amount is also available for EVN and other special invoices
-    # This ensures the Tax Amount is visible in the VAT field on the invoice details page
-    if invoice.get('vat') and 'tax_amount' not in invoice:
-        invoice['tax_amount'] = invoice['vat']
-    
-    if 'total_amount' not in invoice:
-        amount = float(invoice.get('amount', 0) or 0)
-        vat = float(invoice.get('vat', 0) or invoice.get('vat_amount', 0) or 0)
-        invoice['total_amount'] = amount + vat
-    
-    # Get account description (Kind of Transaction)
-    if supplier_info:
-        invoice['account_description'] = supplier_info.get('transaction_type', 'Not specified')
-        
-        # Additional supplier data that might be useful
-        invoice['vat_number'] = supplier_info.get('vat_number', '')
-    
-    # Ensure description is available (from notes or separate description field)
-    if not invoice.get('description') and invoice.get('notes'):
-        invoice['description'] = invoice['notes']
-    elif not invoice.get('description'):
-        invoice['description'] = 'No description available'
-    
-    # Handle currency conversions for financial fields
-    currency = invoice.get('currency', 'PKR')
-    
-    # Process amount with conversions if present
-    if invoice.get('amount'):
-        try:
-            invoice['amount_with_conversions'] = get_amount_with_conversions(invoice['amount'], currency)
-        except Exception as e:
-            app.logger.error(f"Error converting amount: {str(e)}")
-            
-    # Process VAT amount with conversions if present
-    if invoice.get('vat_amount'):
-        try:
-            invoice['vat_amount_with_conversions'] = get_amount_with_conversions(invoice['vat_amount'], currency)
-        except Exception as e:
-            app.logger.error(f"Error converting VAT amount: {str(e)}")
-            
-    # Process total amount with conversions if present
-    if invoice.get('total_amount'):
-        try:
-            invoice['total_amount_with_conversions'] = get_amount_with_conversions(invoice['total_amount'], currency)
-        except Exception as e:
-            app.logger.error(f"Error converting total amount: {str(e)}")
-    
-    # Get exchange rates for display
-    exchange_rates = get_exchange_rates_for_display()
-        
-    app.logger.info(f"Displaying details for invoice: {invoice_number}")
-    return render_template('invoice_details.html', 
-                          invoice=invoice, 
-                          supplier_info=supplier_info,
-                          exchange_rates=exchange_rates)
+    return _render_invoice_details(invoice)
 
 @app.route('/view_invoice_pdf/<invoice_id>')
 def view_invoice_pdf(invoice_id):
@@ -1646,19 +1654,32 @@ def process_bank_statements():
                 invoice_mgr = InvoiceManager()
                 all_invoices = invoice_mgr.get_all_invoices()
 
-                # Match with invoices
-                matched_df = converter.match_with_invoices(statement_df, all_invoices)
+                # Match with invoices (currency-aware matching)
+                matched_df = converter.match_with_invoices(statement_df, all_invoices, bank_currency='PKR')
 
                 # Store results in session
+                matched_count = len(matched_df[matched_df['matched_supplier'].notna()]) if 'matched_supplier' in matched_df.columns else 0
+                total_count = len(statement_df)
+                match_rate = f"{(matched_count / total_count * 100):.0f}%" if total_count > 0 else "0%"
+
+                # Calculate average confidence of matched transactions
+                avg_confidence = 0
+                if matched_count > 0 and 'match_confidence' in matched_df.columns:
+                    avg_confidence = int(matched_df.loc[matched_df['matched_supplier'].notna(), 'match_confidence'].mean())
+
                 session['bank_statement_stats'] = {
-                    'total_transactions': len(statement_df),
-                    'matched_transactions': len(matched_df[matched_df['matched_supplier'].notna()]) if 'matched_supplier' in matched_df.columns else 0,
-                    'bank_format': format_info.get('detected_format', 'Unknown')
+                    'total_transactions': total_count,
+                    'matched_transactions': matched_count,
+                    'match_rate': match_rate,
+                    'avg_confidence': avg_confidence,
+                    'bank_format': format_info.get('detected_format', 'Unknown'),
+                    'original_file': filename,
                 }
                 session['processed_file'] = filename
 
-                # Export processed result
-                output_filename = f"processed_{filename}"
+                # Export processed result (always as .xlsx regardless of input format)
+                base_name = os.path.splitext(filename)[0]
+                output_filename = f"processed_{base_name}.xlsx"
                 output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
                 matched_df.to_excel(output_path, index=False)
                 session['processed_file'] = output_filename
@@ -1944,7 +1965,7 @@ def model_evaluation():
                     return data if isinstance(data, dict) else {}
 
                 evaluator.evaluate_extraction_model(
-                    model_name="Gemini 2.0 Flash (Vision + Text)",
+                    model_name="Gemini 3 Flash Preview (Vision + Text)",
                     extract_fn=gemini_extract,
                 )
             except Exception as e:

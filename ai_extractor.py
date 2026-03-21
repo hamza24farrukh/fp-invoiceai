@@ -454,7 +454,7 @@ def _process_with_gemini_and_mistral_hybrid_vision(
         {f"(+ {len(existing_suppliers) - 30} more suppliers)" if len(existing_suppliers) > 30 else ""}
         """
     
-    # Initialize Gemini model with 2.0 Flash - this model supports multimodal input
+    # Initialize Gemini model with 3 Flash Preview - this model supports multimodal input
     try:
         generation_config = genai.types.GenerationConfig(
             temperature=0.0,
@@ -468,12 +468,10 @@ def _process_with_gemini_and_mistral_hybrid_vision(
         print(generation_config)
         print("-------end Generation Config-------")
 
-        model = genai.GenerativeModel(model_name='gemini-2.0-flash', generation_config=generation_config)
-        logger.info("Successfully initialized Gemini 2.0 Flash model with custom generation config for ocr processing")
-        # model = genai.GenerativeModel('gemini-3-pro-preview')
-        # logger.info("Successfully initialized Gemini 3 Pro Preview model")
+        model = genai.GenerativeModel(model_name='gemini-3-flash-preview', generation_config=generation_config)
+        logger.info("Successfully initialized Gemini 3 Flash Preview model with custom generation config for ocr processing")
     except Exception as e:
-        logger.warning(f"Could not load Gemini-2.0 Flash model: {str(e)}. Looking for alternative model.")
+        logger.warning(f"Could not load Gemini 3 Flash Preview model: {str(e)}. Looking for alternative model.")
         # Try Gemini Pro Vision as a fallback if available
         try:
             model = genai.GenerativeModel('gemini-1.5-pro-vision')
@@ -519,7 +517,7 @@ def _process_with_gemini_and_mistral_hybrid_vision(
                 logger.info(f"Prioritising Initial Transactor/payee extraction from image using Mistral OCR: '{payee}'")
             except Exception as e:
                 logger.error(f"Error in Mistral vision extraction: {str(e)}")
-                logger.error("Falling back to Gemini 2.0 vision for Transactor extraction from image file...")
+                logger.error("Falling back to Gemini 3 Flash Preview vision for Transactor extraction from image file...")
                 try:
                     parts = [
                         {"text": transactor_extraction_prompt},
@@ -1026,12 +1024,12 @@ def extract_data_from_text(text: str,
         existing_suppliers_context = ""
 
     try:
-        # Initialize Gemini model with 2.0 Flash
+        # Initialize Gemini model with 3 Flash Preview
         try:
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            model = genai.GenerativeModel('gemini-3-flash-preview')
         except Exception as e:
             logger.warning(
-                f"Could not load Gemini 2.0 Flash model: {str(e)}. Falling back to Gemini 1.0 Pro."
+                f"Could not load Gemini 3 Flash Preview model: {str(e)}. Falling back to Gemini 1.0 Pro."
             )
             model = genai.GenerativeModel('gemini-1.0-pro')
 
@@ -1282,12 +1280,12 @@ def suggest_categories(supplier_name: str) -> List[str]:
         return []
 
     try:
-        # Initialize Gemini model with 2.0 Flash
+        # Initialize Gemini model with 3 Flash Preview
         try:
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            model = genai.GenerativeModel('gemini-3-flash-preview')
         except Exception as e:
             logger.warning(
-                f"Could not load Gemini 2.0 Flash model: {str(e)}. Falling back to Gemini 1.0 Pro."
+                f"Could not load Gemini 3 Flash Preview model: {str(e)}. Falling back to Gemini 1.0 Pro."
             )
             model = genai.GenerativeModel('gemini-1.0-pro')
 

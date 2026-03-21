@@ -130,7 +130,7 @@
                                 <tr>
                                     <td>{{ invoice.date }}</td>
                                     <td>
-                                        <a href="{{ url_for('invoice_details', invoice_number=invoice.invoice_number) }}" class="invoice-link">
+                                        <a href="{{ url_for('invoice_details_by_id', invoice_id=invoice.id) }}" class="invoice-link">
                                             {{ invoice.invoice_number }}
                                         </a>
                                     </td>

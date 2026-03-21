@@ -1,70 +1,44 @@
 [
     {
-        "invoice_id": 2,
-        "invoice_number": "2025",
-        "invoice_date": "2025-04-27",
-        "supplier_name": "DeepL SE",
-        "category": "Subscription Service",
+        "invoice_id": 23,
+        "invoice_number": "2026",
+        "invoice_date": "2026-02-15",
+        "supplier_name": "Kodecraft",
+        "category": "Software Services",
         "categories": [
-            "Subscription Service"
+            "Software Services"
         ],
-        "transaction_type": "EXPENSES with VAT",
+        "transaction_type": "EXP. other countries",
         "vat_number": "",
-        "amount": 0.0,
+        "amount": 520.89,
         "vat_amount": 0.0,
-        "total_bgn": 0.0,
-        "total_euro": 0.0,
-        "currency": "EUR",
-        "notes": "Extracted from 27-04-2025_Elastic_Email_20230427-1499107.JPG\r\n\r\n[Voice Note - en, 20s]: Alright, so this is an elastic email subscription because I subscribe to the email and this is the invoice for it from elastic email. Thank you.",
-        "description": "Subscription to Elastic Search service",
+        "total_bgn": 145067.865,
+        "total_euro": 145067.865,
+        "currency": "USD",
+        "notes": "Extracted from 15-February-2026_1.pdf",
+        "description": "Social Media Automation & Chatbot Development Services (Feb 2026). Includes chatbot workflow setup, backend automation development, and API integrations.",
         "is_income": 0,
-        "file_path": "uploads\\27-04-2025_Elastic_Email_20230427-1499107.JPG",
+        "file_path": "uploads\\15-February-2026_1.pdf",
         "raw_extraction": {
-            "Transactor": "DeepL SE",
-            "Expense Category Account": "Software/Services",
-            "Kind of Transaction": "EXPENSES with VAT",
-            "VAT": null,
+            "Transactor": "Kodecraft",
+            "Expense Category Account": "Software Services",
+            "Kind of Transaction": "EXP. other countries",
+            "VAT": "",
             "Invoice Number": null,
-            "Invoice Date": "2025-04-27",
-            "Amount": null,
-            "Tax Amount": null,
-            "Total Amount": null,
-            "Currency": "EUR",
-            "Description": "Subscription to Elastic Search service"
-        }
-    },
-    {
-        "invoice_id": 1,
-        "invoice_number": "DP-3188958",
-        "invoice_date": "2023-04-23",
-        "supplier_name": "DeepL SE",
-        "category": "Subscription Service",
-        "categories": [
-            "Subscription Service"
-        ],
-        "transaction_type": "EXPENSES with VAT",
-        "vat_number": "",
-        "amount": 7.49,
-        "vat_amount": 0.0,
-        "total_bgn": 2100.945,
-        "total_euro": 2100.945,
-        "currency": "EUR",
-        "notes": "Extracted from 23-4-2023_DEEPLE_SE_DP-3188958.pdf",
-        "description": "DeepL Pro Starter subscription for the period from Apr 7.49 EUR to May 22, 2023",
-        "is_income": 0,
-        "file_path": "uploads\\23-4-2023_DEEPLE_SE_DP-3188958.pdf",
-        "raw_extraction": {
-            "Transactor": "DeepL SE",
-            "Expense Category Account": "Subscription Service",
-            "Kind of Transaction": "EXPENSES with VAT",
-            "VAT": null,
-            "Invoice Number": "DP-3188958",
-            "Invoice Date": "2023-04-23",
-            "Amount": 7.49,
-            "Tax Amount": 0,
-            "Total Amount": 7.49,
-            "Currency": "EUR",
-            "Description": "DeepL Pro Starter subscription for the period from Apr 7.49 EUR to May 22, 2023"
+            "Invoice Date": "2026-02-15",
+            "Amount": 520.89,
+            "Tax Amount": 0.0,
+            "Total Amount": 520.89,
+            "Currency": "USD",
+            "Description": "Social Media Automation & Chatbot Development Services (Feb 2026). Includes chatbot workflow setup, backend automation development, and API integrations.",
+            "Confidence": {
+                "overall": 0.95,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0,
+                "transactor": 1.0,
+                "vat": 1.0
+            }
         }
     }
 ]
