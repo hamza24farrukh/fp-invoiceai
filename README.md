@@ -193,6 +193,8 @@ User opens InvoiceAI (http://localhost:5000)
 - AI extracts: supplier name, invoice number, date, net amount, VAT, total, currency
 - Automatic supplier matching against existing database using fuzzy matching
 - Supports both text-based PDFs and scanned/photographed documents
+- **Processing Mode selector**: choose Auto (full fallback chain), Cloud AI Only (Gemini + Mistral), or Local Only (Tesseract + Ollama) on the upload page
+- **Model Status panel**: real-time green/red availability indicators for all 5 models via AJAX, visible before uploading
 
 ### Document Classification
 - Every uploaded document is automatically classified by the DiT Vision Transformer
@@ -205,10 +207,13 @@ User opens InvoiceAI (http://localhost:5000)
 - Standalone voice memos can also create new invoice entries
 
 ### Bank Statement Reconciliation
-- Upload any bank statement Excel file (not limited to a specific bank format)
-- System auto-detects column mappings using fuzzy header matching
-- Matches transactions to invoices by amount, date proximity, and supplier name
-- Manual column mapping UI if auto-detection fails
+- Upload any bank statement in Excel (.xlsx, .xls) or CSV format — not limited to a specific bank
+- System auto-detects column mappings using regex-based header matching (supports English, Greek, German, Spanish, French column names)
+- Handles metadata rows automatically — skips account info, opening/closing balance rows to find the real transaction header
+- Supports two amount formats: separate Debit/Credit columns (e.g., Pakistani banks) and single Amount + Sign column with D/C indicator (e.g., Alpha Bank Greece)
+- Currency-aware matching algorithm converts invoice amounts to the bank statement's currency before comparing
+- Confidence score (0-100%) shown for each matched transaction
+- Exported results include: matched supplier, invoice number, confidence, converted amounts, and match details
 
 ### Multi-Currency Support
 - Supports EUR, USD, BGN, and PKR with configurable exchange rates
@@ -224,6 +229,114 @@ User opens InvoiceAI (http://localhost:5000)
 - Built-in benchmarking framework at `/model_evaluation`
 - Compares extraction accuracy across all models using ground truth data
 - Measures processing time, field-level accuracy, and failure rates
+
+---
+
+## Bank Statement Matching Algorithm
+
+The bank statement reconciliation system uses a multi-factor scoring algorithm to match bank transactions against invoice records. This is particularly challenging for international transactions where currency conversion, transfer fees, and varying bank formats must be handled.
+
+### Format Auto-Detection
+
+When a bank statement is uploaded, the system:
+
+1. **Scans rows 0-9** for the header row, skipping metadata (account number, opening/closing balance, currency info)
+2. **Validates headers** by requiring at least 3 columns including a date column AND a financial column (debit/credit/amount)
+3. **Maps columns** using regex patterns that support multiple languages and naming conventions:
+
+| Standard Field | Example Column Names Matched |
+|---------------|------------------------------|
+| Date | `Date`, `Booking Date`, `Transaction Date`, `Valeur`, `Ημερομηνία` |
+| Description | `Description`, `Details`, `Narrative`, `Reference Number`, `Περιγραφή` |
+| Reference | `Doc No`, `Transaction number`, `Ref`, `Check No` |
+| Debit | `Debit`, `Withdrawal`, `Charge`, `Χρέωση` |
+| Credit | `Credit`, `Deposit`, `Πίστωση`, `Income` |
+| Amount | `Amount`, `Sum`, `Value`, `Ποσό` |
+| Amount Sign | `Amount Sign`, `D/C`, `DR/CR`, `Sign` |
+| Balance | `Balance`, `Available Balance`, `Υπόλοιπο` |
+
+### Amount + Sign Splitting
+
+European bank statements (e.g., Alpha Bank Greece) often use a single `Amount` column with a separate `Amount Sign` column containing `D` (debit) or `C` (credit). The converter detects this pattern and automatically splits into separate debit/credit columns.
+
+### Currency-Aware Matching
+
+Before comparing amounts, the algorithm converts all invoice amounts to the bank statement's currency using the configured exchange rates:
+
+```
+Invoice: 520.89 USD × 278.50 (USD_TO_PKR rate) = 145,067.87 PKR
+Bank transaction: 139,898.58 PKR (credit)
+Difference: 3.56% (accounted for by SWIFT transfer fee ~$18.56)
+```
+
+### Scoring System
+
+Each bank transaction is scored against every invoice using four weighted criteria:
+
+| Criterion | Max Weight | Priority | Description |
+|-----------|-----------|----------|-------------|
+| **Amount Closeness** | 0.55 (55%) | Highest | Compares currency-converted invoice amount against bank transaction amount. Allows up to 15% deduction for international transfer fees (SWIFT, intermediary charges, local taxes). |
+| **Date Proximity** | 0.20 (20%) | Medium | How close the transaction date is to the invoice date. Uses a step function with up to 30-day tolerance for international transfers. |
+| **Supplier Name** | 0.15 (15%) | Lower | Checks if the supplier name (or significant words from it) appears in the bank transaction description or reference. |
+| **Invoice Number** | 0.10 (10%) | Lowest | Checks if the invoice number appears in the transaction description or reference. |
+
+### Amount Scoring Detail
+
+The amount scoring accounts for the fact that international transfers typically **lose** money to fees — the received amount is always slightly less than the converted invoice amount:
+
+| Condition | Score | Interpretation |
+|-----------|-------|---------------|
+| Bank amount > 102% of converted invoice | 0.00 | Cannot receive more than owed (2% rounding buffer) |
+| Difference ≤ 0.5% | 0.55 | Near-exact match |
+| Difference ≤ 5% | 0.50 | Small bank fee deduction |
+| Difference ≤ 15% | 0.45 → 0.20 (linear decay) | Larger deductions (SWIFT fees, intermediary charges) |
+| Difference > 15% | 0.00 | Too large a discrepancy |
+
+### Date Scoring Detail
+
+| Days Apart | Score | Typical Scenario |
+|-----------|-------|-----------------|
+| 0 days | 0.20 | Same-day settlement |
+| 1-3 days | 0.18 | Domestic transfer |
+| 4-7 days | 0.15 | Standard international transfer |
+| 8-14 days | 0.10 | Delayed processing |
+| 15-30 days | 0.05 | Significant delay |
+| > 30 days | 0.00 | Unlikely to be related |
+
+### Directional Matching
+
+The algorithm respects transaction direction:
+- **Credit transactions** (money in) are first matched against income invoices, then fall back to expense invoices if no income match is found
+- **Debit transactions** (money out) are first matched against expense invoices, then fall back to income invoices
+
+This fallback ensures matching works even when invoices are not explicitly marked as income/expense.
+
+### Match Threshold
+
+A minimum score of **0.25 (25%)** is required to accept a match. The highest-scoring invoice for each transaction is selected as the best match.
+
+### Output Columns
+
+The processed bank statement Excel file includes these enrichment columns:
+
+| Column | Description |
+|--------|-------------|
+| `matched_supplier` | Supplier name from the matched invoice |
+| `matched_invoice_number` | Invoice number of the matched invoice |
+| `match_confidence` | 0-100% confidence score |
+| `match_method` | Which scoring criteria contributed (e.g., `close_amount+date_proximity`) |
+| `converted_invoice_amount` | Invoice amount converted to the bank statement's currency |
+| `amount_difference_pct` | Percentage difference between converted invoice and bank transaction |
+| `match_details` | Human-readable breakdown (e.g., "Invoice 2026: 520.89 USD = 145,067.87 PKR, bank: 139,898.58 PKR (diff: 3.6%)") |
+
+### Tested Bank Formats
+
+| Bank | Country | Format | Amount Style | Verified |
+|------|---------|--------|-------------|----------|
+| Alfalah Bank | Pakistan | CSV with 4 metadata rows | Separate Debit + Credit columns | Yes |
+| Alpha Bank | Greece | Excel | Single Amount + Amount Sign (D/C) | Yes |
+
+The generic column detection supports any bank statement that uses recognisable column names in English, Greek, German, Spanish, or French.
 
 ---
 
@@ -349,7 +462,7 @@ The application works entirely offline with local models:
 
 ## Testing
 
-The project includes a comprehensive **pytest** test suite with **105 test functions** across 8 test modules, covering all core managers, processors, and AI model wrappers.
+The project includes a comprehensive **pytest** test suite with **86 test functions** across 7 test modules, covering all core managers, processors, and AI model wrappers.
 
 ### Running Tests
 
@@ -377,7 +490,7 @@ pytest tests/test_currency_manager.py::test_usd_to_eur -v
 | `test_pdf_processor.py` | 5 | Base64 file encoding, unsupported format detection, image metadata extraction, OCR info reporting |
 | `test_document_classifier.py` | 8 | DiT model initialisation, RVL-CDIP label to app type mapping, supported document types, model info reporting, nonexistent file handling |
 | `test_audio_processor.py` | 13 | Whisper model initialisation (default/custom/fallback), supported format validation (MP3, WAV, M4A, OGG, FLAC, WebM), unsupported format rejection, model info, available models listing, error handling for missing files |
-| `test_bank_statement_converter.py` | 9 | Column auto-detection (standard and alternative header names), Excel format detection, conversion to standard format, transaction-to-invoice matching by amount, empty invoice edge case |
+| `test_bank_statement_converter.py` | 13 | Column auto-detection (standard and alternative header names), Excel format detection, conversion to standard format, currency-aware cross-currency matching (USD→PKR with SWIFT fee tolerance), directional matching (debit→expense, credit→income with fallback), no-match when bank exceeds invoice, output column validation, empty invoice edge case |
 
 ### Test Fixtures (conftest.py)
 
@@ -511,7 +624,7 @@ evaluator.export_results("benchmarks/results.json")
 2. **Review Results** — Check extracted fields on the results page, edit if needed before saving
 3. **Manage Invoices** — View, search, edit, and delete invoices at `/invoices` (expenses) and `/income`
 4. **Manage Suppliers** — View and edit supplier records at `/suppliers`
-5. **Bank Statements** — Upload Excel bank statements at `/process_bank_statements` for automatic transaction matching
+5. **Bank Statements** — Upload Excel or CSV bank statements at `/process_bank_statements` for automatic currency-aware transaction matching with confidence scores
 6. **Voice Notes** — Upload audio recordings on invoice edit pages for Whisper transcription
 7. **Reports & Export** — Generate financial reports and Excel exports at `/export` and `/comprehensive_report`
 8. **Model Evaluation** — Compare model performance at `/model_evaluation`
