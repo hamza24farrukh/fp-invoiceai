@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Invoices{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 3rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: #f8f9fa;
+    }
+
+    .upload-area:hover, .upload-area.highlight {
+        border-color: #007bff;
+        background-color: rgba(0, 123, 255, 0.05);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+
+    .upload-area i {
+        transition: all 0.3s ease;
+    }
+
+    .upload-area:hover i, .upload-area.highlight i {
+        transform: translateY(-10px);
+    }
+
+    .progress {
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .file-list-container {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+    }
+
+    .btn-primary {
+        animation: pulse 2s infinite;
+    }
+
+    #file-list .list-group-item {
+        transition: all 0.2s ease;
+    }
+
+    #file-list .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+    .status-dot.available { background-color: #28a745; }
+    .status-dot.unavailable { background-color: #dc3545; }
+    .status-dot.checking { background-color: #ffc107; }
+    .model-item { padding: 4px 0; font-size: 0.9rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-md-12">
+        <h2><i class="bi bi-upload me-2"></i> Upload Invoices</h2>
+        <p class="lead">Upload PDF invoices to extract supplier information using AI</p>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row fade-in">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="upload-form">
+                    <div class="upload-area" id="upload-area">
+                        <i class="bi bi-cloud-arrow-up display-3 text-primary"></i>
+                        <h4 class="mt-3">Drag and drop PDF files here</h4>
+                        <p class="text-muted">or</p>
+                        <button type="button" class="btn btn-outline-primary" id="browse-button">Browse Files</button>
+                        <input type="file" id="file-input" name="files[]" style="display: none;" multiple accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+
+                    <!-- Processing Mode Selector -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="processing-mode" class="form-label fw-bold">
+                                <i class="bi bi-gear me-1"></i>Processing Mode
+                            </label>
+                            <select class="form-select" id="processing-mode" name="processing_mode">
+                                <option value="auto" selected>Auto (Cloud + Local fallback)</option>
+                                <option value="cloud">Cloud AI Only (Gemini + Mistral)</option>
+                                <option value="local">Local Only (Tesseract + Ollama)</option>
+                            </select>
+                            <div class="form-text">Auto tries cloud AI first, then falls back to local models if unavailable.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Model Status Panel -->
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-cpu me-1"></i>Model Availability
+                            </label>
+                            <div class="border rounded p-2" id="model-status-panel">
+                                <div id="model-status-list">
+                                    <div class="text-muted small" id="status-checking">
+                                        <span class="status-dot checking"></span> Checking model availability...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="file-list" class="mt-3"></div>
+
+                    <!-- Progress Loading Indicator (Hidden by default) -->
+                    <div id="upload-progress" class="mt-4" style="display: none;">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center">
+                            <p id="progress-status">Processing files... This may take a while.</p>
+                            <p class="text-muted small">Extracting data with AI. Please don't close the browser window.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn" disabled>
+                            <i class="bi bi-lightning me-2"></i>Process Invoices
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 fade-in">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Tips for Best Results</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex">
+                        <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                        <div>
+                            <strong>Clear PDF Files</strong>
+                            <p class="mb-0 text-muted">Ensure your PDF files are clear and readable.</p>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                        <div>
+                            <strong>Text-Based PDFs</strong>
+                            <p class="mb-0 text-muted">PDFs with selectable text work best. Scanned documents may have limited accuracy.</p>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                        <div>
+                            <strong>File Size</strong>
+                            <p class="mb-0 text-muted">Keep files under 10MB for faster processing.</p>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                        <div>
+                            <strong>Multiple Files</strong>
+                            <p class="mb-0 text-muted">You can upload multiple files at once for batch processing.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const browseButton = document.getElementById('browse-button');
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
+        const fileList = document.getElementById('file-list');
+        const submitBtn = document.getElementById('submit-btn');
+        const uploadForm = document.getElementById('upload-form');
+        const uploadProgress = document.getElementById('upload-progress');
+        const progressBar = document.querySelector('.progress-bar');
+        const progressStatus = document.getElementById('progress-status');
+
+        // Fetch model status and populate the panel
+        fetch('/api/model_status')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('model-status-list');
+                const checking = document.getElementById('status-checking');
+                if (checking) checking.remove();
+
+                let html = '';
+                const models = ['gemini', 'mistral', 'ollama', 'tesseract', 'dit'];
+                models.forEach(key => {
+                    const model = data[key];
+                    if (model) {
+                        const dotClass = model.available ? 'available' : 'unavailable';
+                        const statusText = model.available ? 'Ready' : 'Unavailable';
+                        const badge = model.type === 'cloud'
+                            ? '<span class="badge bg-info ms-1">Cloud</span>'
+                            : '<span class="badge bg-secondary ms-1">Local</span>';
+                        html += '<div class="model-item">' +
+                            '<span class="status-dot ' + dotClass + '"></span>' +
+                            model.name + ' ' + badge +
+                            '</div>';
+                    }
+                });
+                container.innerHTML = html;
+            })
+            .catch(() => {
+                const checking = document.getElementById('status-checking');
+                if (checking) checking.textContent = 'Could not check model status.';
+            });
+
+        // File selection via button
+        if (browseButton && fileInput) {
+            browseButton.addEventListener('click', function() {
+                fileInput.click();
+            });
+        }
+
+        // Drag and drop handling
+        if (uploadArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadArea.classList.add('highlight');
+            }
+
+            function unhighlight() {
+                uploadArea.classList.remove('highlight');
+            }
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    updateFileList();
+                }
+            }
+        }
+
+        // File input change handler
+        if (fileInput) {
+            fileInput.addEventListener('change', updateFileList);
+        }
+
+        // Update file list display
+        function updateFileList() {
+            if (!fileInput.files.length) {
+                fileList.innerHTML = '';
+                submitBtn.disabled = true;
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const fileSize = formatFileSize(file.size);
+
+                html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-file-pdf text-danger me-2"></i>
+                            <span>${file.name}</span>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">${fileSize}</span>
+                    </div>
+                </div>`;
+            }
+            html += '</div>';
+
+            fileList.innerHTML = html;
+            submitBtn.disabled = false;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        // Form submission handler - show progress indicator
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                // Show progress indicator
+                uploadProgress.style.display = 'block';
+                submitBtn.disabled = true;
+
+                // Simulate progress (since we can't measure actual AI processing progress)
+                let progress = 0;
+                const totalFiles = fileInput.files.length;
+                const mode = document.getElementById('processing-mode').value;
+                // Local mode is slower (~55s per file), cloud is faster (~10s)
+                const timePerFile = mode === 'local' ? 55000 : 10000;
+                const totalTime = totalFiles * timePerFile;
+                const interval = 500; // Update every 500ms
+
+                const progressInterval = setInterval(function() {
+                    progress += (interval / totalTime) * 100;
+                    if (progress > 95) progress = 95; // Cap at 95% until complete
+
+                    progressBar.style.width = Math.min(progress, 100) + '%';
+
+                    // Update status message based on mode
+                    if (mode === 'local') {
+                        if (progress < 20) {
+                            progressStatus.textContent = "Running Tesseract OCR on documents...";
+                        } else if (progress < 60) {
+                            progressStatus.textContent = "Extracting data with local Ollama model (this takes longer)...";
+                        } else if (progress < 90) {
+                            progressStatus.textContent = "Matching with existing records...";
+                        } else {
+                            progressStatus.textContent = "Almost done! Finalizing results...";
+                        }
+                    } else {
+                        if (progress < 30) {
+                            progressStatus.textContent = "Uploading and analyzing files...";
+                        } else if (progress < 60) {
+                            progressStatus.textContent = "Extracting supplier information...";
+                        } else if (progress < 90) {
+                            progressStatus.textContent = "Processing with AI and matching with existing records...";
+                        } else {
+                            progressStatus.textContent = "Almost done! Finalizing results...";
+                        }
+                    }
+
+                }, interval);
+
+                // Store the interval ID in sessionStorage for potential use later
+                sessionStorage.setItem('progressIntervalId', progressInterval);
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Comprehensive Financial Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .card-header-custom {
+        background-color: #4a89dc;
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 15px;
+    }
+    
+    .form-section {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        color: #4a89dc;
+        margin-bottom: 15px;
+    }
+    
+    .btn-generate {
+        background-color: #4a89dc;
+        border-color: #4a89dc;
+    }
+    
+    .btn-generate:hover {
+        background-color: #3a79cc;
+        border-color: #3a79cc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h1 class="text-center mb-4">
+                <i class="bi bi-file-earmark-spreadsheet me-2"></i> Comprehensive Financial Report
+            </h1>
+            <p class="lead text-center">Generate a detailed financial report combining invoice data and bank statements</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card report-card">
+                <div class="card-header card-header-custom">
+                    <h4 class="mb-0"><i class="bi bi-gear-fill me-2"></i> Report Configuration</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="form-section">
+                            <h5><i class="bi bi-calendar3 me-2"></i> Select Time Period</h5>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="month" class="form-label">Month</label>
+                                    <select class="form-select" id="month" name="month">
+                                        {% for month in months %}
+                                            <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>{{ month }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="year" class="form-label">Year</label>
+                                    <select class="form-select" id="year" name="year">
+                                        {% for year in years %}
+                                            <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h5><i class="bi bi-bank me-2"></i> Bank Statement (Optional)</h5>
+                            <div class="mb-3">
+                                <label for="bank_statement_file" class="form-label">Upload Bank Statement</label>
+                                <input class="form-control" type="file" id="bank_statement_file" name="bank_statement_file" accept=".xlsx,.xls">
+                                <div class="help-text">
+                                    <p>Upload a bank statement Excel file to include bank transactions in your report.</p>
+                                    <p><strong>Note:</strong> You can upload either a raw bank statement or a previously processed bank statement. The system will automatically process raw statements as needed.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg btn-generate">
+                                <i class="bi bi-file-earmark-excel me-2"></i> Generate Comprehensive Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card report-card">
+                <div class="card-header card-header-custom">
+                    <h4 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i> About This Report</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-file-earmark-bar-graph feature-icon"></i>
+                        <h5>Comprehensive Financial Analysis</h5>
+                    </div>
+                    
+                    <p>The comprehensive financial report combines data from multiple sources:</p>
+                    
+                    <ul>
+                        <li><strong>Invoice Database</strong> - Organized by expense category and transaction type</li>
+                        <li><strong>Bank Statements</strong> - Matched with invoices for reconciliation</li>
+                        <li><strong>Summary Analysis</strong> - Monthly totals with profit/loss calculation</li>
+                    </ul>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb-fill me-2"></i> The report will include only the data for the selected month and year, with detailed sheets for expenses, income and bank transactions.
+                    </div>
+                    
+                    <div class="currency-alert-box">
+                        <div class="d-flex align-items-center">
+                            <div class="me-2" style="font-size: 20px; color: #ff3333;">
+                                <span style="font-weight: bold;">⚠</span>
+                            </div>
+                            <span>
+                                <strong>Currency Alert:</strong> This warning symbol (⚠) appears next to EUR amounts converted from USD, indicating possible value differences due to exchange rate fluctuations.
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6><i class="bi bi-check2-circle me-2"></i> Report Features:</h6>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-check-lg me-2 text-success"></i>
+                            <span>Income and expense categorization</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-check-lg me-2 text-success"></i>
+                            <span>Bank transaction matching</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-check-lg me-2 text-success"></i>
+                            <span>Multi-currency support (PKR base)</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-lg me-2 text-success"></i>
+                            <span>Profit/loss summary with visualizations</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

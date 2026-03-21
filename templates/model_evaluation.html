@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluation - InvoiceAI{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-md-12">
+        <h2><i class="bi bi-graph-up"></i> Model Evaluation & Benchmarking</h2>
+        <p class="text-muted">Compare pre-trained models across different data domains: LLM vision, OCR, audio, and document classification.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <p>Run benchmarks against ground truth data in the <code>benchmarks/</code> directory to evaluate all models.</p>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-play-fill me-1"></i>Run Evaluation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if results %}
+<!-- Comparison Summary -->
+{% if results.comparison is defined or results.models is defined %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Best Accuracy</h6>
+                <h4 class="card-title text-success">{{ results.comparison.best_accuracy or results.best_accuracy or 'N/A' }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Fastest Model</h6>
+                <h4 class="card-title text-primary">{{ results.comparison.fastest or results.fastest or 'N/A' }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Most Reliable</h6>
+                <h4 class="card-title text-info">{{ results.comparison.most_reliable or results.most_reliable or 'N/A' }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Detailed Results Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table me-2"></i>Model Comparison Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Model</th>
+                                <th>Domain</th>
+                                <th>Accuracy</th>
+                                <th>Avg Time</th>
+                                <th>Failure Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set detailed = results.detailed or results.results or [] %}
+                            {% for model in detailed %}
+                            <tr>
+                                <td><strong>{{ model.model_name }}</strong></td>
+                                <td>
+                                    {% if 'Gemini' in model.model_name or 'Mistral' in model.model_name %}
+                                        <span class="badge bg-primary">LLM Vision + Text</span>
+                                    {% elif 'OCR' in model.model_name or 'Tesseract' in model.model_name %}
+                                        <span class="badge bg-success">Image (OCR)</span>
+                                    {% elif 'Whisper' in model.model_name %}
+                                        <span class="badge bg-warning text-dark">Audio</span>
+                                    {% elif 'Classifier' in model.model_name or 'DiT' in model.model_name %}
+                                        <span class="badge bg-info">Image Classification</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Other</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set acc = model.accuracy or 0 %}
+                                    <div class="progress" style="min-width: 120px;">
+                                        <div class="progress-bar {% if acc >= 0.8 %}bg-success{% elif acc >= 0.5 %}bg-warning{% else %}bg-danger{% endif %}"
+                                             style="width: {{ (acc * 100)|int }}%">
+                                            {{ "%.1f"|format(acc * 100) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ "%.3f"|format(model.avg_time or 0) }}s</td>
+                                <td>
+                                    {% set fr = model.failure_rate or 0 %}
+                                    <span class="{% if fr > 0.3 %}text-danger{% elif fr > 0 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ "%.0f"|format(fr * 100) }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% if not detailed %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No evaluation results available. Click "Run Evaluation" to benchmark models.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Architecture Info -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>Pre-trained Models Used</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <h6><span class="badge bg-primary">LLM Vision + Text</span></h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Gemini 2.0 Flash</strong> - Multimodal LLM (Google)</li>
+                            <li><strong>Mistral Medium</strong> - LLM with vision (Mistral AI)</li>
+                        </ul>
+                        <small class="text-muted">Invoice field extraction from documents</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6><span class="badge bg-success">Image Domain</span></h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Tesseract OCR</strong> - CNN-based text detection</li>
+                            <li><strong>DiT (ViT)</strong> - Document Image Transformer</li>
+                        </ul>
+                        <small class="text-muted">OCR extraction + document classification</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6><span class="badge bg-warning text-dark">Audio Domain</span></h6>
+                        <ul class="list-unstyled">
+                            <li><strong>OpenAI Whisper</strong> - Encoder-decoder transformer</li>
+                        </ul>
+                        <small class="text-muted">Speech-to-text for voice notes</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            No evaluation results yet. Add test documents to <code>benchmarks/sample_invoices/</code>,
+            update <code>benchmarks/ground_truth.json</code>, then click "Run Evaluation".
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

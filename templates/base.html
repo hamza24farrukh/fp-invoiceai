@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Invoice Processor{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* Styles for the USD warning alert in web interface and Excel report */
+        .currency-alert-icon {
+            color: #ff3333;
+            font-weight: bold;
+            margin-right: 3px;
+        }
+        
+        /* This is for the explanation beside the icon */
+        .alert-explanation {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Styles for report tables */
+        .report-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .report-table td, .report-table th {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+        }
+        
+        /* Style for the currency alert explanation box */
+        .currency-alert-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ffcc00;
+            background-color: #fffacd;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">InvoiceAI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/upload' %}active{% endif %}" href="/upload">Upload</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/suppliers' %}active{% endif %}" href="/suppliers">Manage Suppliers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/invoices' %}active{% endif %}" href="/invoices">Invoices</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/import_excel' %}active{% endif %}" href="/import_excel">Import Excel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/export' %}active{% endif %}" href="/export">Export Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/process_bank_statements' %}active{% endif %}" href="/process_bank_statements">Process Bank Statements</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/comprehensive_report' %}active{% endif %}" href="/comprehensive_report">Comprehensive Report</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/currency_settings' %}active{% endif %}" href="/currency_settings">Currency Settings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/model_evaluation' %}active{% endif %}" href="/model_evaluation">Model Evaluation</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">InvoiceAI &copy; 2026 - Multi-Model Invoice Processing System</span>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

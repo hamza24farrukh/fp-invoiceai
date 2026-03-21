@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Suppliers from Excel{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Import Suppliers from Excel</h1>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Excel Import</h5>
+    </div>
+    <div class="card-body">
+        <p class="card-text">
+            Upload Excel files (.xlsx or .xls) to automatically extract supplier information. 
+            The system will identify unique suppliers with their:
+        </p>
+        <ul>
+            <li>Supplier Names (Transactors)</li>
+            <li>Transaction Types</li>
+            <li>Service Categories</li>
+        </ul>
+        <p class="card-text">
+            Please ensure your Excel files have columns for transaction type, supplier name (transactor), 
+            and expense category. The system will automatically detect these columns.
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info">
+            <ul class="mb-0">
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" class="mt-3">
+            <div class="mb-3">
+                <label for="excel_file" class="form-label">Excel File</label>
+                <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx, .xls">
+                <div class="form-text">Only Excel files (.xlsx, .xls) are supported.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Import Suppliers</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Notes on Excel Structure</h5>
+    </div>
+    <div class="card-body">
+        <p class="mb-2">For best results, your Excel file should have:</p>
+        <ul>
+            <li>Date information</li>
+            <li>Transaction type information (e.g., "EXPENSE", "PAYMENT", etc.)</li>
+            <li>Supplier/transactor names</li>
+            <li>Category information</li>
+        </ul>
+        <p class="mb-0">
+            The system will automatically attempt to identify these columns based on their headers.
+            If column names aren't recognized, it will default to using:
+        </p>
+        <ul class="mb-0">
+            <li>Column 1 for dates</li>
+            <li>Column 2 for transaction types</li>
+            <li>Column 3 for supplier names (transactors)</li>
+            <li>Column 4 for expense categories</li>
+        </ul>
+    </div>
+</div>
+
+<div class="text-end mt-3">
+    <a href="{{ url_for('suppliers') }}" class="btn btn-secondary">Back to Suppliers</a>
+</div>
+{% endblock %}

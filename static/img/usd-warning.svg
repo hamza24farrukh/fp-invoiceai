@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Warning triangle background -->
+  <path d="M12 1L1 21h22L12 1z" fill="#ff3333" />
+  <path d="M12 3L3 19h18L12 3z" fill="#ffffff" />
+  
+  <!-- Dollar sign -->
+  <path d="M12 6.5v1.5m0 8v1.5m-2.5-6h4a2 2 0 1 0 0-4h-3a2 2 0 1 0 0 4h3a2 2 0 1 1 0 4h-4" 
+        stroke="#333333" stroke-width="1.5" fill="none" stroke-linecap="round" />
+  <path d="M12 4L12 20" stroke="#333333" stroke-width="1.5" stroke-linecap="round" />
+</svg>

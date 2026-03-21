@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Invoice{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>
+        {% if invoice.is_income %}
+        <i class="bi bi-cash-coin me-2"></i> Edit Income Record
+        {% else %}
+        <i class="bi bi-receipt me-2"></i> Edit Invoice
+        {% endif %}
+    </h1>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            {% if invoice.is_income %}
+            <a href="{{ url_for('income') }}" class="btn btn-secondary">Back to Income</a>
+            {% else %}
+            <a href="{{ url_for('invoices') }}" class="btn btn-secondary">Back to Invoices</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Invoice Details</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_invoice', invoice_id=invoice.id) }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" id="date" name="date" class="form-control" 
+                               value="{{ invoice.date }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="invoice_number" class="form-label">Invoice Number</label>
+                        <input type="text" id="invoice_number" name="invoice_number" class="form-control" 
+                               value="{{ invoice.invoice_number }}" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="transactor" class="form-label">
+                            {% if invoice.is_income %}Client{% else %}Supplier{% endif %}
+                        </label>
+                        <input type="text" id="transactor" name="transactor" class="form-control" 
+                               value="{{ invoice.transactor }}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="transaction_type" class="form-label">Transaction Type</label>
+                        <select id="transaction_type" name="transaction_type" class="form-select">
+                            {% if invoice.is_income %}
+                                <option value="INCOME" {% if invoice.transaction_type == 'INCOME' %}selected{% endif %}>Income</option>
+                                <option value="REFUND" {% if invoice.transaction_type == 'REFUND' %}selected{% endif %}>Refund</option>
+                                <option value="PAYMENT" {% if invoice.transaction_type == 'PAYMENT' %}selected{% endif %}>Payment</option>
+                            {% else %}
+                                <option value="EXPENSES with VAT" {% if invoice.transaction_type == 'EXPENSES with VAT' %}selected{% endif %}>Expenses with VAT</option>
+                                <option value="DEDUCTION" {% if invoice.transaction_type == 'DEDUCTION' %}selected{% endif %}>Deduction</option>
+                                <option value="EXP. VIES" {% if invoice.transaction_type == 'EXP. VIES' %}selected{% endif %}>EXP. VIES</option>
+                                <option value="EXP. other countries" {% if invoice.transaction_type == 'EXP. other countries' %}selected{% endif %}>EXP. other countries</option>
+                                <option value="OTHER EXPENCES" {% if invoice.transaction_type == 'OTHER EXPENCES' %}selected{% endif %}>Other Expenses</option>
+                                <option value="BANK FEES" {% if invoice.transaction_type == 'BANK FEES' %}selected{% endif %}>Bank Fees</option>
+                                <option value="PAYPAL FEES" {% if invoice.transaction_type == 'PAYPAL FEES' %}selected{% endif %}>PayPal Fees</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="currency" class="form-label">Currency</label>
+                        <select id="currency" name="currency" class="form-select">
+                            <option value="PKR" {% if invoice.currency == 'PKR' %}selected{% endif %}>PKR</option>
+                            <option value="EUR" {% if invoice.currency == 'EUR' %}selected{% endif %}>EUR</option>
+                            <option value="USD" {% if invoice.currency == 'USD' %}selected{% endif %}>USD</option>
+                            <option value="BGN" {% if invoice.currency == 'BGN' %}selected{% endif %}>BGN</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="amount" class="form-label">Amount (net)</label>
+                        <div class="input-group">
+                            <input type="text" id="amount" name="amount" class="form-control" 
+                                   value="{{ invoice.amount }}" step="0.01" min="0">
+                            <span class="input-group-text" id="amount-currency">{{ invoice.currency }}</span>
+                        </div>
+                        <small class="form-text text-muted">Use comma (,) as decimal separator for EUR/BGN</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="vat_amount" class="form-label">VAT Amount</label>
+                        <div class="input-group">
+                            <input type="text" id="vat_amount" name="vat" class="form-control" 
+                                   value="{{ invoice.vat or invoice.vat_amount }}" step="0.01" min="0">
+                            <span class="input-group-text">{{ invoice.currency }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="total_amount" class="form-label">Total Amount</label>
+                        <div class="input-group">
+                            <input type="text" id="total_amount" name="total_amount" class="form-control" 
+                                   value="{{ invoice.total_amount }}" step="0.01" min="0">
+                            <span class="input-group-text">{{ invoice.currency }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row bg-light p-3 mb-3 rounded" id="currency-conversion-display">
+                    <div class="col-md-12 mb-2">
+                        <h5>Currency Conversion Preview</h5>
+                        <small class="text-muted">Based on current exchange rates</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3" id="pkr-conversion-container">
+                        <label class="form-label">PKR Amount (Base Currency)</label>
+                        <div class="input-group">
+                            <input type="text" id="total_bgn" name="total_bgn" class="form-control"
+                                   value="{{ invoice.total_bgn }}" readonly>
+                            <span class="input-group-text">PKR</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3" style="display:none;">
+                        <label class="form-label">PKR Amount</label>
+                        <div class="input-group">
+                            <input type="text" id="total_euro" name="total_euro" class="form-control"
+                                   value="{{ invoice.total_euro }}" readonly>
+                            <span class="input-group-text">PKR</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3 bg-light p-3 rounded border border-primary">
+                    <label for="description" class="form-label fw-bold">
+                        <i class="bi bi-card-text me-2"></i>Description <span class="text-primary">(Will be visible in reports)</span>
+                    </label>
+                    <textarea id="description" name="description" class="form-control" rows="3" 
+                              placeholder="Add a detailed description for this invoice/transaction (this will appear in comprehensive reports)">{{ invoice.description }}</textarea>
+                    <small class="form-text text-muted mt-1">Descriptions are important for better financial reporting and transaction tracking.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Internal Notes</label>
+                    <textarea id="notes" name="notes" class="form-control" rows="3" 
+                             placeholder="Optional internal notes (not shown in reports)">{{ invoice.notes }}</textarea>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_income" name="is_income" {% if invoice.is_income %}checked{% endif %}>
+                    <label class="form-check-label" for="is_income">This is an income transaction</label>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+
+            {% if invoice.id and invoice.id > 0 %}
+            <!-- Voice Note Upload (Whisper Speech-to-Text) -->
+            <div class="card mt-3 border-info">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h6 class="mb-0"><i class="bi bi-mic me-2"></i>Voice Note (Whisper AI)</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">Upload an audio recording to transcribe and attach as a note to this invoice.</p>
+                    <form method="POST" action="{{ url_for('upload_voice_note', invoice_id=invoice.id) }}" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="audio_file" accept=".mp3,.wav,.m4a,.ogg,.flac,.webm" class="form-control">
+                            <button type="submit" class="btn btn-outline-info">
+                                <i class="bi bi-mic-fill me-1"></i>Transcribe & Attach
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">Supported: MP3, WAV, M4A, OGG, FLAC, WebM</small>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Input elements
+        const amountInput = document.getElementById('amount');
+        const vatAmountInput = document.getElementById('vat_amount');
+        const totalAmountInput = document.getElementById('total_amount');
+        const totalBgnInput = document.getElementById('total_bgn');
+        const totalEuroInput = document.getElementById('total_euro');
+        const currencySelect = document.getElementById('currency');
+        const isIncomeCheckbox = document.getElementById('is_income');
+        const transactionTypeSelect = document.getElementById('transaction_type');
+        const transactorLabel = document.querySelector('label[for="transactor"]');
+        const amountCurrencyLabel = document.getElementById('amount-currency');
+        const pkrConversionContainer = document.getElementById('pkr-conversion-container');
+
+        // Exchange rates (these values come from our currency_manager system)
+        // All rates convert TO PKR (base currency)
+        const exchangeRates = {
+            EUR_TO_PKR: {{ exchange_rates.EUR_TO_PKR|default(280.50) }},
+            USD_TO_PKR: {{ exchange_rates.USD_TO_PKR|default(278.50) }},
+            BGN_TO_PKR: {{ exchange_rates.BGN_TO_PKR|default(143.40) }}
+        };
+        
+        // Define transaction type options
+        const incomeOptions = [
+            { value: 'INCOME', text: 'Income' },
+            { value: 'REFUND', text: 'Refund' },
+            { value: 'PAYMENT', text: 'Payment' }
+        ];
+        
+        const expenseOptions = [
+            { value: 'EXPENSES with VAT', text: 'Expenses with VAT' },
+            { value: 'DEDUCTION', text: 'Deduction' },
+            { value: 'EXP. VIES', text: 'EXP. VIES' },
+            { value: 'EXP. other countries', text: 'EXP. other countries' },
+            { value: 'OTHER EXPENCES', text: 'Other Expenses' },
+            { value: 'BANK FEES', text: 'Bank Fees' },
+            { value: 'PAYPAL FEES', text: 'PayPal Fees' }
+        ];
+        
+        // Parse amount considering both dot and comma as decimal separators
+        function parseAmount(value) {
+            if (!value) return 0;
+            // Replace comma with dot for calculation
+            return parseFloat(value.toString().replace(',', '.')) || 0;
+        }
+        
+        // Format amount with the appropriate decimal separator based on currency
+        function formatAmount(value, currency) {
+            if (isNaN(value)) value = 0;
+            
+            // For EUR and BGN, use comma as decimal separator
+            if (currency === 'EUR' || currency === 'BGN') {
+                return value.toFixed(2).replace('.', ',');
+            }
+            
+            // For USD and others, use period as decimal separator
+            return value.toFixed(2);
+        }
+        
+        function updateTransactionTypes() {
+            // Store current selection if possible
+            const currentValue = transactionTypeSelect.value;
+            
+            // Clear existing options
+            transactionTypeSelect.innerHTML = '';
+            
+            // Get the appropriate options based on income/expense
+            const options = isIncomeCheckbox.checked ? incomeOptions : expenseOptions;
+            
+            // Add new options
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.text;
+                if (option.value === currentValue) {
+                    optionElement.selected = true;
+                }
+                transactionTypeSelect.appendChild(optionElement);
+            });
+            
+            // Update transactor label
+            transactorLabel.textContent = isIncomeCheckbox.checked ? 'Client' : 'Supplier';
+        }
+        
+        function updateCurrencyLabels() {
+            // Update currency labels in the input groups
+            const currency = currencySelect.value;
+            document.querySelectorAll('.input-group-text').forEach(el => {
+                if (el.id !== 'amount-currency') {
+                    el.textContent = currency;
+                }
+            });
+            
+            // Update the amount currency label
+            amountCurrencyLabel.textContent = currency;
+            
+            // For PKR currency, hide PKR conversion (it's the original)
+            // For other currencies, show PKR conversion
+            if (currency === 'PKR') {
+                pkrConversionContainer.style.display = 'none';
+            } else {
+                pkrConversionContainer.style.display = 'block';
+            }
+            
+            // Trigger recalculation
+            calculateTotals();
+        }
+        
+        function calculateTotals() {
+            // Get values with proper decimal parsing
+            const amount = parseAmount(amountInput.value);
+            const vatAmount = parseAmount(vatAmountInput.value);
+            
+            // Calculate total in original currency
+            const totalOriginal = amount + vatAmount;
+            
+            // Update the total amount field
+            totalAmountInput.value = formatAmount(totalOriginal, currencySelect.value);
+            
+            // Perform currency conversions based on selected currency
+            const currency = currencySelect.value;
+            
+            // Calculate PKR amount (base currency)
+            let pkrAmount;
+            if (currency === 'PKR') {
+                pkrAmount = totalOriginal;
+            } else if (currency === 'EUR') {
+                pkrAmount = totalOriginal * exchangeRates.EUR_TO_PKR;
+            } else if (currency === 'USD') {
+                pkrAmount = totalOriginal * exchangeRates.USD_TO_PKR;
+            } else if (currency === 'BGN') {
+                pkrAmount = totalOriginal * exchangeRates.BGN_TO_PKR;
+            } else {
+                pkrAmount = totalOriginal;
+            }
+
+            // Update conversion display fields (both DB columns store PKR)
+            totalEuroInput.value = formatAmount(pkrAmount, 'PKR');
+            totalBgnInput.value = formatAmount(pkrAmount, 'PKR');
+        }
+        
+        // Calculate total when amount or VAT changes
+        function handleAmountChange() {
+            calculateTotals();
+        }
+        
+        // Event listeners
+        amountInput.addEventListener('input', handleAmountChange);
+        vatAmountInput.addEventListener('input', handleAmountChange);
+        totalAmountInput.addEventListener('input', function() {
+            // If the user manually changes the total, we don't recalculate
+        });
+        
+        currencySelect.addEventListener('change', updateCurrencyLabels);
+        isIncomeCheckbox.addEventListener('change', updateTransactionTypes);
+        
+        // Initialize on page load
+        updateTransactionTypes();
+        updateCurrencyLabels();
+        calculateTotals();
+    });
+</script>
+{% endblock %}

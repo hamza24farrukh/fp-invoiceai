@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice Processor - Home{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-md-12 text-center mb-4">
+        <h1 class="display-4">AI-Powered Invoice Processor</h1>
+        <p class="lead">Extract, manage, and analyze supplier data from your invoices</p>
+    </div>
+</div>
+
+<div class="row fade-in">
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-upload"></i> Upload Invoices
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Upload your PDF invoices and let our AI extract supplier information automatically.</p>
+                <p class="card-text text-muted">Supports multiple files for batch processing.</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/upload" class="btn btn-primary">Upload Invoices</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i> Manage Suppliers
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">View and edit your supplier information, including categories and transaction types.</p>
+                <p class="card-text text-muted">Keep your supplier database organized and up-to-date.</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/suppliers" class="btn btn-primary">Manage Suppliers</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-receipt"></i> Track Invoices
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Track invoice details including date, number, amount, VAT, and totals with multi-currency support.</p>
+                <p class="card-text text-muted">Maintain complete records of all your financial transactions.</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/invoices" class="btn btn-primary">View Invoices</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bank"></i> Process Bank Statements
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Enhance your bank statements with detailed descriptions from your invoice data.</p>
+                <p class="card-text text-muted">Match transactions with suppliers for easier reconciliation.</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/process_bank_statements" class="btn btn-primary">Process Statements</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-file-earmark-excel"></i> Export Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Export your supplier data and invoice information to Excel for further analysis.</p>
+                <p class="card-text text-muted">Create detailed reports and share with your team.</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/export" class="btn btn-primary">Export Data</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5 fade-in">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">How It Works</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="p-3">
+                            <div class="d-inline-block bg-light p-3 rounded-circle mb-3">
+                                <h2 class="mb-0">1</h2>
+                            </div>
+                            <h5>Upload</h5>
+                            <p class="text-muted">Upload your PDF invoices</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="p-3">
+                            <div class="d-inline-block bg-light p-3 rounded-circle mb-3">
+                                <h2 class="mb-0">2</h2>
+                            </div>
+                            <h5>Extract</h5>
+                            <p class="text-muted">AI extracts supplier data</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="p-3">
+                            <div class="d-inline-block bg-light p-3 rounded-circle mb-3">
+                                <h2 class="mb-0">3</h2>
+                            </div>
+                            <h5>Manage</h5>
+                            <p class="text-muted">Review and edit data</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="p-3">
+                            <div class="d-inline-block bg-light p-3 rounded-circle mb-3">
+                                <h2 class="mb-0">4</h2>
+                            </div>
+                            <h5>Export</h5>
+                            <p class="text-muted">Export to Excel</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

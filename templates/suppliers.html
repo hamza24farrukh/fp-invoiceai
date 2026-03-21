@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Suppliers{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-md-12">
+        <h2><i class="bi bi-people me-2"></i> Manage Suppliers</h2>
+        <p class="lead">View, edit, and organize your supplier information</p>
+    </div>
+</div>
+
+<div class="row fade-in mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-0">Supplier Database</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="supplier-search" placeholder="Search suppliers...">
+                            <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if suppliers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <!-- KEY FIELD 1: Supplier Name (Transactor) -->
+                                <th class="bg-primary bg-opacity-10 border-start border-primary border-3">
+                                    <i class="bi bi-building me-1 text-primary"></i> Supplier Name
+                                </th>
+                                <!-- KEY FIELD 2: Service Category -->
+                                <th class="bg-warning bg-opacity-10 border-start border-warning border-3">
+                                    <i class="bi bi-tag me-1 text-warning"></i> Service Category
+                                </th>
+                                <!-- KEY FIELD 3: Transaction Type -->
+                                <th class="bg-success bg-opacity-10 border-start border-success border-3">
+                                    <i class="bi bi-currency-exchange me-1 text-success"></i> Transaction Type
+                                </th>
+                                <!-- KEY FIELD 4: Registration Number -->
+                                <th class="bg-danger bg-opacity-10 border-start border-danger border-3">
+                                    <i class="bi bi-receipt me-1 text-danger"></i> Registration Number
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for supplier in suppliers %}
+                            <tr class="supplier-item">
+                                <!-- KEY FIELD 1: Supplier Name (Transactor) -->
+                                <td class="fw-bold text-primary">{{ supplier.supplier_name }}</td>
+                                
+                                <!-- KEY FIELD 2: Service Category -->
+                                <td>
+                                    {% if supplier.categories %}
+                                        {% for category in supplier.categories %}
+                                            <span class="badge bg-warning text-dark badge-category me-1">{{ category }}</span>
+                                        {% endfor %}
+                                    {% elif supplier.category %}
+                                        <span class="badge bg-warning text-dark badge-category">{{ supplier.category }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary text-white">Uncategorized</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- KEY FIELD 3: Transaction Type -->
+                                <td><span class="badge bg-success">{{ supplier.transaction_type }}</span></td>
+                                
+                                <!-- KEY FIELD 4: Registration Number -->
+                                <td class="text-danger">
+                                    {% if supplier.vat_number or supplier.tax_amount %}
+                                        {{ supplier.vat_number or supplier.tax_amount }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/edit_supplier/{{ supplier.supplier_name }}" class="btn btn-sm btn-outline-primary" title="Edit" target="_blank">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal" 
+                                                data-supplier-name="{{ supplier.supplier_name }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i> No suppliers found in the database.
+                </div>
+                <p class="text-center">
+                    Upload some invoices to get started with supplier management.
+                </p>
+                <div class="text-center">
+                    <a href="/upload" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i> Upload Invoices
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% if suppliers %}
+            <div class="card-footer bg-light">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <small class="text-muted">
+                            Showing {{ suppliers|length }} of <strong>{{ total_suppliers }}</strong> suppliers
+                        </small>
+                    </div>
+                    <div class="col-md-8 text-end">
+                        <a href="/export" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                data-bs-toggle="modal" data-bs-target="#deleteAllModal">
+                            <i class="bi bi-trash me-1"></i> Delete All Suppliers
+                        </button>
+                    </div>
+                </div>
+                
+                {% if total_pages > 1 %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <nav aria-label="Supplier pagination">
+                            <ul class="pagination justify-content-center">
+                                <!-- Previous button -->
+                                <li class="page-item {{ 'disabled' if page == 1 else '' }}">
+                                    <a class="page-link" href="{{ url_for('suppliers', page=page-1) if page > 1 else '#' }}" 
+                                       {{ 'tabindex="-1" aria-disabled="true"' if page == 1 else '' }}>
+                                        <i class="bi bi-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                                
+                                <!-- First page -->
+                                {% if page > 3 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('suppliers', page=1) }}">1</a>
+                                </li>
+                                {% if page > 4 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                                {% endif %}
+                                
+                                <!-- Numbered pages -->
+                                {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
+                                <li class="page-item {{ 'active' if p == page else '' }}">
+                                    <a class="page-link" href="{{ url_for('suppliers', page=p) }}">{{ p }}</a>
+                                </li>
+                                {% endfor %}
+                                
+                                <!-- Last page -->
+                                {% if page < total_pages - 2 %}
+                                {% if page < total_pages - 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('suppliers', page=total_pages) }}">{{ total_pages }}</a>
+                                </li>
+                                {% endif %}
+                                
+                                <!-- Next button -->
+                                <li class="page-item {{ 'disabled' if page == total_pages else '' }}">
+                                    <a class="page-link" href="{{ url_for('suppliers', page=page+1) if page < total_pages else '#' }}"
+                                       {{ 'tabindex="-1" aria-disabled="true"' if page == total_pages else '' }}>
+                                        Next <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Single Supplier Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this supplier? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="delete-form" method="post" action="">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete All Suppliers Confirmation Modal -->
+<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteAllModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Delete All Suppliers
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <p><strong>Warning:</strong> You are about to delete <strong>ALL</strong> suppliers from the database.</p>
+                    <p>This action <strong>cannot be undone</strong> and will permanently remove all supplier data.</p>
+                </div>
+                <p>Are you absolutely sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="delete-all-form" method="post" action="/delete_all_suppliers">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Delete All Suppliers
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup delete confirmation modal
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const supplierName = button.getAttribute('data-supplier-name');
+                const deleteForm = document.getElementById('delete-form');
+                
+                if (deleteForm) {
+                    // Properly encode the supplier name for the URL
+                    const encodedSupplierName = encodeURIComponent(supplierName);
+                    deleteForm.action = `/delete_supplier/${encodedSupplierName}`;
+                }
+            });
+        }
+        
+        // Supplier search functionality
+        const searchInput = document.getElementById('supplier-search');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const supplierItems = document.querySelectorAll('.supplier-item');
+                
+                supplierItems.forEach(item => {
+                    const supplierName = item.querySelector('td:first-child').textContent.toLowerCase();
+                    const category = item.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    
+                    if (supplierName.includes(searchTerm) || category.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

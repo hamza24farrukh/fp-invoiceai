@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Currency Exchange Rate Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h4 mb-0">Currency Exchange Rate Settings</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Configure exchange rates for currency conversions</p>
+
+                    <div class="alert alert-info">
+                        <h5>Currency Rules</h5>
+                        <ul>
+                            <li>For <strong>EUR</strong> amounts: Display in EUR and convert to PKR automatically</li>
+                            <li>For <strong>USD</strong> amounts: Display in USD and convert to PKR automatically</li>
+                            <li>For <strong>BGN</strong> amounts: Display in BGN and convert to PKR automatically</li>
+                            <li>For <strong>PKR</strong> amounts: Display only in PKR (no conversion needed)</li>
+                        </ul>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h3 class="h5 mb-0">EUR &rarr; PKR Conversion</h3>
+                                </div>
+                                <div class="card-body">
+                                    <p>Current rate: <strong>{{ rates.EUR_TO_PKR }}</strong></p>
+                                    <p class="small text-muted">1 EUR = {{ rates.EUR_TO_PKR }} PKR</p>
+
+                                    <form action="{{ url_for('update_currency_rate') }}" method="post">
+                                        <input type="hidden" name="rate_key" value="EUR_TO_PKR">
+                                        <div class="input-group">
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                name="rate_value"
+                                                value="{{ rates.EUR_TO_PKR }}"
+                                                placeholder="e.g., 280.50"
+                                                required
+                                            >
+                                            <button type="submit" class="btn btn-primary">Update</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h3 class="h5 mb-0">USD &rarr; PKR Conversion</h3>
+                                </div>
+                                <div class="card-body">
+                                    <p>Current rate: <strong>{{ rates.USD_TO_PKR }}</strong></p>
+                                    <p class="small text-muted">1 USD = {{ rates.USD_TO_PKR }} PKR</p>
+
+                                    <form action="{{ url_for('update_currency_rate') }}" method="post">
+                                        <input type="hidden" name="rate_key" value="USD_TO_PKR">
+                                        <div class="input-group">
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                name="rate_value"
+                                                value="{{ rates.USD_TO_PKR }}"
+                                                placeholder="e.g., 278.50"
+                                                required
+                                            >
+                                            <button type="submit" class="btn btn-primary">Update</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h3 class="h5 mb-0">BGN &rarr; PKR Conversion</h3>
+                                </div>
+                                <div class="card-body">
+                                    <p>Current rate: <strong>{{ rates.BGN_TO_PKR }}</strong></p>
+                                    <p class="small text-muted">1 BGN = {{ rates.BGN_TO_PKR }} PKR</p>
+
+                                    <form action="{{ url_for('update_currency_rate') }}" method="post">
+                                        <input type="hidden" name="rate_key" value="BGN_TO_PKR">
+                                        <div class="input-group">
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                name="rate_value"
+                                                value="{{ rates.BGN_TO_PKR }}"
+                                                placeholder="e.g., 143.40"
+                                                required
+                                            >
+                                            <button type="submit" class="btn btn-primary">Update</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

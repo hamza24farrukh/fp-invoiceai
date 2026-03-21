@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Processing Results{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+    .new-supplier {
+        background-color: rgba(25, 135, 84, 0.1);
+        border-left: 4px solid #198754;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .new-supplier::before {
+        content: 'NEW';
+        position: absolute;
+        top: 10px;
+        right: -25px;
+        background-color: #198754;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 2px 30px;
+        transform: rotate(45deg);
+        z-index: 1;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+    }
+    
+    .new-supplier {
+        animation: pulse 2s infinite;
+    }
+    
+    .badge-category {
+        transition: all 0.3s ease;
+    }
+    
+    .badge-category:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-md-12">
+        <h2><i class="bi bi-list-check me-2"></i> Processing Results</h2>
+        <p class="lead">Review the information extracted from your invoices</p>
+    </div>
+</div>
+
+{% if extracted_data %}
+<div class="row fade-in">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Extracted Information</h5>
+                <a href="/export" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                </a>
+            </div>
+            <div class="card-body">
+                {% for item in extracted_data %}
+                <div class="supplier-info p-3 mb-3 rounded {% if item.supplier_name in new_suppliers|map(attribute='supplier_name') %}new-supplier{% endif %}">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-3 shadow-sm">
+                                <div class="card-body">
+                                    <!-- KEY FIELD 1: Supplier Name (Transactor) -->
+                                    <h4 class="border-start border-primary border-4 ps-3 py-2 bg-light rounded-end text-primary">
+                                        <i class="bi bi-building me-2"></i>{{ item.supplier_name }}
+                                        {% if item.supplier_name in new_suppliers|map(attribute='supplier_name') %}
+                                        <span class="badge bg-success ms-2">New</span>
+                                        {% endif %}
+                                    </h4>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-4">
+                                            <!-- KEY FIELD 2: Service Category -->
+                                            <div class="mb-3 border-start border-warning border-4 ps-3 py-2 bg-light rounded-end">
+                                                <h6 class="text-warning mb-2"><i class="bi bi-tag me-2"></i>Service Category</h6>
+                                                {% if item.categories %}
+                                                    {% for category in item.categories %}
+                                                        <span class="badge bg-warning text-dark badge-category me-1">{{ category }}</span>
+                                                    {% endfor %}
+                                                {% elif item.category %}
+                                                    <span class="badge bg-warning text-dark badge-category">{{ item.category }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary text-white">Uncategorized</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-4">
+                                            <!-- KEY FIELD 3: Transaction Type -->
+                                            <div class="mb-3 border-start border-success border-4 ps-3 py-2 bg-light rounded-end">
+                                                <h6 class="text-success mb-2"><i class="bi bi-currency-exchange me-2"></i>Transaction Type</h6>
+                                                <span class="badge bg-success text-white">{{ item.transaction_type }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-4">
+                                            <!-- KEY FIELD 4: Registration/VAT Number -->
+                                            {% if item.vat_number or item.tax_amount %}
+                                            <div class="mb-3 border-start border-danger border-4 ps-3 py-2 bg-light rounded-end">
+                                                <h6 class="text-danger mb-2"><i class="bi bi-receipt me-2"></i>Registration Number</h6>
+                                                <span class="fw-bold">{{ item.vat_number or item.tax_amount }}</span>
+                                            </div>
+                                            {% else %}
+                                            <div class="mb-3 border-start border-danger border-4 ps-3 py-2 bg-light rounded-end">
+                                                <h6 class="text-danger mb-2"><i class="bi bi-receipt me-2"></i>Registration Number</h6>
+                                                <span class="text-muted">Not available</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Collapsible Raw Extraction Data Section -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#rawData{{ loop.index }}" 
+                                    aria-expanded="false">
+                                <i class="bi bi-code-slash me-1"></i> Show Raw Extraction Data
+                            </button>
+                            
+                            <div class="collapse mt-2" id="rawData{{ loop.index }}">
+                                <div class="card card-body bg-light">
+                                    <h6>Raw Extraction Data:</h6>
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Field</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if item.raw_extraction %}
+                                                {% for key, value in item.raw_extraction.items() %}
+                                                <tr>
+                                                    <td><strong>{{ key }}</strong></td>
+                                                    <td>{{ value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="2" class="text-center">No raw extraction data available</td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row fade-in">
+    <div class="col-md-8 offset-md-2">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i> No data was extracted from the uploaded invoices.
+        </div>
+        <div class="text-center mt-4">
+            <a href="/upload" class="btn btn-primary">Try Again</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if new_suppliers %}
+<div class="row fade-in">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i> New Suppliers Detected
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>The following new suppliers have been added to your database:</p>
+                <ul class="list-group">
+                    {% for supplier in new_suppliers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ supplier.supplier_name }}</strong>
+                            {% if supplier.categories %}
+                                {% for category in supplier.categories %}
+                                    <span class="badge bg-info text-dark ms-1 badge-category">{{ category }}</span>
+                                {% endfor %}
+                            {% elif supplier.category %}
+                                <span class="badge bg-info text-dark ms-1 badge-category">{{ supplier.category }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary text-white ms-1">Uncategorized</span>
+                            {% endif %}
+                        </div>
+                        <a href="/edit_supplier/{{ supplier.supplier_name }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-pencil me-1"></i> Edit
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="card-footer bg-light">
+                <a href="/suppliers" class="btn btn-outline-primary">
+                    <i class="bi bi-people me-1"></i> Manage All Suppliers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if updated_vat_numbers %}
+<div class="row fade-in mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-receipt-cutoff me-2"></i> VAT Numbers Updated
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>The following suppliers have been updated with newly detected VAT registration numbers:</p>
+                <ul class="list-group">
+                    {% for supplier in updated_vat_numbers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ supplier.supplier_name }}</strong>
+                            <span class="ms-3 text-success">
+                                <i class="bi bi-check-circle me-1"></i> VAT: <span class="fw-bold">{{ supplier.vat_number }}</span>
+                            </span>
+                        </div>
+                        <a href="/edit_supplier/{{ supplier.supplier_name }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-pencil me-1"></i> View
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4 fade-in">
+    <div class="col-md-12 text-center">
+        <a href="/upload" class="btn btn-primary">
+            <i class="bi bi-upload me-1"></i> Process More Invoices
+        </a>
+    </div>
+</div>
+{% endblock %}

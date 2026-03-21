@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Process Bank Statements{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Process Bank Statements</h1>
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Upload Bank Statement</h4>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-warning" role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form action="{{ url_for('process_bank_statements') }}" method="post" enctype="multipart/form-data">
+                        <div class="form-group mb-3">
+                            <label for="file">Select Bank Statement Excel File:</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls,.csv" required>
+                            </div>
+                            <small class="form-text text-muted">Upload your bank statement in Excel format (.xlsx, .xls) or CSV. The system will auto-detect the format and match transactions with your invoices.</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="advanced_extraction" name="advanced_extraction" checked>
+                                <label class="form-check-label" for="advanced_extraction">
+                                    <span class="text-primary fw-bold">Use Enhanced AI Payee Extraction</span> 
+                                    <span class="badge bg-success">New!</span>
+                                </label>
+                            </div>
+                            <div class="ps-4">
+                                <small class="form-text text-muted">
+                                    Uses Gemini 2.0 Flash model to intelligently extract payee names from bank references.
+                                    Achieves up to 85% accuracy on complex bank references.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ai_transaction_matching" name="ai_transaction_matching" checked>
+                                <label class="form-check-label" for="ai_transaction_matching">
+                                    <span class="text-primary fw-bold">Use AI Transaction Matching</span> 
+                                    <span class="badge bg-danger">New!</span>
+                                </label>
+                            </div>
+                            <div class="ps-4">
+                                <small class="form-text text-muted">
+                                    Uses advanced Gemini AI to match transactions with suppliers by analyzing reference numbers, 
+                                    amounts, and dates. Significantly improves matching accuracy for complex transactions.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary" id="processBtn">
+                                <i class="fas fa-upload me-2"></i> Upload and Process
+                            </button>
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary ms-2">
+                                <i class="fas fa-arrow-left me-2"></i> Back to Home
+                            </a>
+                            <!-- Processing Indicator (Hidden by default) -->
+                            <div class="processing-indicator mt-4" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Processing...</span>
+                                </div>
+                                <p class="mt-2" id="processingMessage">Processing your bank statement, this may take a minute...</p>
+                                <p class="text-muted small" id="aiMessage">
+                                    <i class="fas fa-robot text-primary"></i> 
+                                    When using AI extraction, processing each reference can take 2-3 seconds
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Add JavaScript to show spinner when form is submitted -->
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const form = document.querySelector('form');
+                                const processBtn = document.getElementById('processBtn');
+                                const processingIndicator = document.querySelector('.processing-indicator');
+                                const processingMessage = document.getElementById('processingMessage');
+                                const aiMessage = document.getElementById('aiMessage');
+                                const advancedCheckbox = document.getElementById('advanced_extraction');
+                                const aiMatchingCheckbox = document.getElementById('ai_transaction_matching');
+                                
+                                form.addEventListener('submit', function() {
+                                    // Disable the button
+                                    processBtn.disabled = true;
+                                    
+                                    // Show the processing indicator
+                                    processingIndicator.style.display = 'block';
+                                    
+                                    // Update message based on AI options
+                                    if (advancedCheckbox.checked || aiMatchingCheckbox.checked) {
+                                        let aiFeatures = [];
+                                        if (advancedCheckbox.checked) aiFeatures.push("payee extraction");
+                                        if (aiMatchingCheckbox.checked) aiFeatures.push("transaction matching");
+                                        
+                                        processingMessage.textContent = `Processing with AI ${aiFeatures.join(' and ')}, this may take 1-3 minutes...`;
+                                        aiMessage.style.display = 'block';
+                                    } else {
+                                        processingMessage.textContent = 'Processing your bank statement...';
+                                        aiMessage.style.display = 'none';
+                                    }
+                                    
+                                    // Let the form submit
+                                    return true;
+                                });
+                            });
+                        </script>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="small">
+                        <i class="fas fa-info-circle me-1 text-info"></i>
+                        Bank statements will be enhanced with detailed descriptions based on your invoice data.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">How It Works</h4>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Upload your bank statement file (Excel or CSV).</li>
+                        <li>The system automatically detects the format from the file.</li>
+                        <li>Each transaction is matched with your existing invoice data.</li>
+                        <li>Detailed descriptions are added to transactions based on matching invoices.</li>
+                        <li>An enhanced Excel file is generated with these detailed descriptions.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

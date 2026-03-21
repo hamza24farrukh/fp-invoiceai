@@ -1,0 +1,22 @@
+@"
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual env
+venv/
+.env
+
+# Local/generated data
+uploads/
+*.db
+benchmarks/results.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+"@ | Out-File -Encoding utf8 .gitignore

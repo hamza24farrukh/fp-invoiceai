@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Supplier{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/suppliers">Suppliers</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit {{ supplier.supplier_name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row fade-in">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pencil-square me-2"></i> Edit Supplier Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <!-- KEY FIELD 1: Supplier Name (Transactor) -->
+                    <div class="mb-3 border-start border-primary border-4 ps-3 pt-2 pb-3 rounded-start bg-light">
+                        <label for="supplier_name" class="form-label text-primary fw-bold">
+                            <i class="bi bi-building me-1"></i> Supplier Name (Transactor)
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="supplier_name" name="supplier_name" value="{{ supplier.supplier_name }}" required>
+                        <small class="text-muted">The company or entity that issued the invoice.</small>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <!-- KEY FIELD 2: Service Category -->
+                        <div class="col-md-6 border-start border-warning border-4 ps-3 pt-2 pb-3 rounded-start bg-light">
+                            <label class="form-label text-warning fw-bold">
+                                <i class="bi bi-tag me-1"></i> Service Category
+                            </label>
+                            <div id="categories-container">
+                                <!-- Primary category (for backward compatibility) -->
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="category" name="category" value="{{ supplier.category }}" placeholder="Primary category">
+                                    <button class="btn btn-warning" type="button" id="suggest-categories">
+                                        <i class="bi bi-magic me-1"></i> Suggest
+                                    </button>
+                                </div>
+                                
+                                <!-- Additional categories -->
+                                {% if supplier.categories %}
+                                    {% for cat in supplier.categories %}
+                                        {% if cat != supplier.category %}
+                                        <div class="input-group mb-2 additional-category">
+                                            <input type="text" class="form-control" name="additional_categories[]" value="{{ cat }}" placeholder="Additional category">
+                                            <button class="btn btn-outline-danger remove-category" type="button">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div id="category-suggestions" class="mt-2"></div>
+                            
+                            <button type="button" class="btn btn-sm btn-outline-warning mt-2" id="add-category">
+                                <i class="bi bi-plus-circle me-1"></i> Add Another Category
+                            </button>
+                            <small class="form-text text-muted">Add multiple categories for suppliers that provide different services (e.g., "Server rental" and "Mobile services").</small>
+                        </div>
+                        
+                        <!-- KEY FIELD 3: Transaction Type -->
+                        <div class="col-md-6 border-start border-success border-4 ps-3 pt-2 pb-3 rounded-start bg-light">
+                            <label for="transaction_type" class="form-label text-success fw-bold">
+                                <i class="bi bi-currency-exchange me-1"></i> Transaction Type
+                            </label>
+                            <select class="form-select form-select-lg" id="transaction_type" name="transaction_type">
+                                <option value="EXPENSES with VAT" {% if supplier.transaction_type == 'EXPENSES with VAT' %}selected{% endif %}>EXPENSES with VAT</option>
+                                <option value="EXP. VIES" {% if supplier.transaction_type == 'EXP. VIES' %}selected{% endif %}>EXP. VIES</option>
+                                <option value="EXP. other countries" {% if supplier.transaction_type == 'EXP. other countries' %}selected{% endif %}>EXP. other countries (specify country)</option>
+                                <option value="BANK FEES" {% if supplier.transaction_type == 'BANK FEES' %}selected{% endif %}>BANK FEES</option>
+                                <option value="INCOME" {% if supplier.transaction_type == 'INCOME' %}selected{% endif %}>INCOME</option>
+                                <option value="OTHER EXPENCES" {% if supplier.transaction_type == 'OTHER EXPENCES' %}selected{% endif %}>OTHER EXPENCES</option>
+                                <option value="PAYMENT" {% if supplier.transaction_type == 'PAYMENT' %}selected{% endif %}>PAYMENT</option>
+                            </select>
+                            <small class="form-text text-muted">This determines how transactions appear in financial reports.</small>
+                        </div>
+                    </div>
+                    
+                    <!-- KEY FIELD 4: Registration/VAT Number -->
+                    <div class="mb-3 border-start border-danger border-4 ps-3 pt-2 pb-3 rounded-start bg-light">
+                        <label for="vat_number" class="form-label text-danger fw-bold">
+                            <i class="bi bi-receipt me-1"></i> Registration/VAT Number
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="vat_number" name="vat_number" value="{{ supplier.vat_number or supplier.tax_amount or '' }}">
+                        </div>
+                        <small class="text-muted">The supplier's official registration/identification number, which may be called VAT number, Tax ID, Company ID, Registration No., etc. (e.g., FR22424761419, BG202161716, US EIN, SIRET).</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/suppliers" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Suppliers
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

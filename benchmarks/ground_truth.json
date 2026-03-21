@@ -1,0 +1,38 @@
+[
+    {
+        "file": "sample_invoice_001.pdf",
+        "expected": {
+            "transactor": "Acme Corp",
+            "invoice_number": "INV-2024-001",
+            "date": "2024-01-15",
+            "amount": 250.00,
+            "vat": 50.00,
+            "currency": "EUR"
+        },
+        "expected_type": "invoice"
+    },
+    {
+        "file": "sample_invoice_002.pdf",
+        "expected": {
+            "transactor": "Tech Solutions Ltd",
+            "invoice_number": "TS-2024-0042",
+            "date": "2024-02-20",
+            "amount": 1500.00,
+            "vat": 300.00,
+            "currency": "USD"
+        },
+        "expected_type": "invoice"
+    },
+    {
+        "file": "sample_receipt_001.jpg",
+        "expected": {
+            "transactor": "Office Supplies Co",
+            "invoice_number": "REC-5678",
+            "date": "2024-03-01",
+            "amount": 45.99,
+            "vat": 9.20,
+            "currency": "EUR"
+        },
+        "expected_type": "receipt"
+    }
+]
