@@ -1971,6 +1971,46 @@ def model_evaluation():
             except Exception as e:
                 app.logger.warning(f"Gemini evaluation skipped: {e}")
 
+            # Evaluate Phi 3.5 (Local Ollama)
+            try:
+                from ai_extractor import _check_ollama_available, _extract_with_ollama
+                from pdf_processor import extract_text_from_document
+
+                if _check_ollama_available("phi3.5"):
+                    def phi_extract(file_path):
+                        text = extract_text_from_document(file_path)
+                        if not text:
+                            return {}
+                        results = _extract_with_ollama(text, os.path.basename(file_path))
+                        if isinstance(results, list) and len(results) > 0:
+                            return results[0] if isinstance(results[0], dict) else {}
+                        return results if isinstance(results, dict) else {}
+
+                    evaluator.evaluate_extraction_model(
+                        model_name="Phi 3.5 via Ollama (Local LLM)",
+                        extract_fn=phi_extract,
+                    )
+                else:
+                    app.logger.warning("Phi 3.5 evaluation skipped: Ollama not running or model not available")
+                    evaluator.results.append({
+                        'model_name': 'Phi 3.5 via Ollama (Local LLM)',
+                        'accuracy': 0.0,
+                        'avg_time': 0.0,
+                        'failure_rate': 0.0,
+                        'status': 'skipped',
+                        'skip_reason': 'Ollama not running or model not available'
+                    })
+            except Exception as e:
+                app.logger.warning(f"Phi 3.5 evaluation skipped: {e}")
+                evaluator.results.append({
+                    'model_name': 'Phi 3.5 via Ollama (Local LLM)',
+                    'accuracy': 0.0,
+                    'avg_time': 0.0,
+                    'failure_rate': 0.0,
+                    'status': 'skipped',
+                    'skip_reason': str(e)
+                })
+
             # Evaluate OCR
             try:
                 from pdf_processor import extract_text_with_ocr

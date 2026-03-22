@@ -27,13 +27,14 @@
 
 {% if results %}
 <!-- Comparison Summary -->
-{% if results.comparison is defined or results.models is defined %}
+{% set comp = results.comparison if results.comparison is defined else results %}
+{% if comp.models is defined or results.models is defined %}
 <div class="row mb-4">
     <div class="col-md-4">
         <div class="card text-center border-success">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Best Accuracy</h6>
-                <h4 class="card-title text-success">{{ results.comparison.best_accuracy or results.best_accuracy or 'N/A' }}</h4>
+                <h4 class="card-title text-success">{{ comp.best_accuracy or 'N/A' }}</h4>
             </div>
         </div>
     </div>
@@ -41,7 +42,7 @@
         <div class="card text-center border-primary">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Fastest Model</h6>
-                <h4 class="card-title text-primary">{{ results.comparison.fastest or results.fastest or 'N/A' }}</h4>
+                <h4 class="card-title text-primary">{{ comp.fastest or 'N/A' }}</h4>
             </div>
         </div>
     </div>
@@ -49,7 +50,7 @@
         <div class="card text-center border-info">
             <div class="card-body">
                 <h6 class="card-subtitle mb-2 text-muted">Most Reliable</h6>
-                <h4 class="card-title text-info">{{ results.comparison.most_reliable or results.most_reliable or 'N/A' }}</h4>
+                <h4 class="card-title text-info">{{ comp.most_reliable or 'N/A' }}</h4>
             </div>
         </div>
     </div>
@@ -76,13 +77,15 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% set detailed = results.detailed or results.results or [] %}
+                            {% set detailed = results.detailed if results.detailed is defined else (results.results if results.results is defined else []) %}
                             {% for model in detailed %}
                             <tr>
                                 <td><strong>{{ model.model_name }}</strong></td>
                                 <td>
                                     {% if 'Gemini' in model.model_name or 'Mistral' in model.model_name %}
                                         <span class="badge bg-primary">LLM Vision + Text</span>
+                                    {% elif 'Phi' in model.model_name or 'Ollama' in model.model_name %}
+                                        <span class="badge bg-dark">Local LLM (Text)</span>
                                     {% elif 'OCR' in model.model_name or 'Tesseract' in model.model_name %}
                                         <span class="badge bg-success">Image (OCR)</span>
                                     {% elif 'Whisper' in model.model_name %}
@@ -93,6 +96,12 @@
                                         <span class="badge bg-secondary">Other</span>
                                     {% endif %}
                                 </td>
+                                {% if model.status is defined and model.status == 'skipped' %}
+                                <td colspan="3" class="text-center">
+                                    <span class="badge bg-secondary"><i class="bi bi-skip-forward me-1"></i>Skipped</span>
+                                    <small class="text-muted ms-2">{{ model.skip_reason or 'Model unavailable' }}</small>
+                                </td>
+                                {% else %}
                                 <td>
                                     {% set acc = model.accuracy or 0 %}
                                     <div class="progress" style="min-width: 120px;">
@@ -109,6 +118,7 @@
                                         {{ "%.0f"|format(fr * 100) }}%
                                     </span>
                                 </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
 
@@ -134,7 +144,7 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <h6><span class="badge bg-primary">LLM Vision + Text</span></h6>
                         <ul class="list-unstyled">
                             <li><strong>Gemini 3 Flash Preview</strong> - Multimodal LLM (Google)</li>
@@ -142,7 +152,14 @@
                         </ul>
                         <small class="text-muted">Invoice field extraction from documents</small>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
+                        <h6><span class="badge bg-dark">Local LLM (Text)</span></h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Phi 3.5</strong> - SLM via Ollama (Microsoft)</li>
+                        </ul>
+                        <small class="text-muted">Offline invoice extraction fallback</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
                         <h6><span class="badge bg-success">Image Domain</span></h6>
                         <ul class="list-unstyled">
                             <li><strong>Tesseract OCR</strong> - CNN-based text detection</li>
@@ -150,7 +167,7 @@
                         </ul>
                         <small class="text-muted">OCR extraction + document classification</small>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <h6><span class="badge bg-warning text-dark">Audio Domain</span></h6>
                         <ul class="list-unstyled">
                             <li><strong>OpenAI Whisper</strong> - Encoder-decoder transformer</li>

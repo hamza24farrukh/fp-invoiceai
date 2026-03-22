@@ -102,7 +102,9 @@ class ModelEvaluator:
 
         if not self._ground_truth:
             logger.warning("No ground truth data available for evaluation")
-            return self._empty_result(model_name)
+            result = self._empty_result(model_name)
+            self.results.append(result)
+            return result
 
         ground_truth = self._ground_truth
         if test_files:
@@ -110,7 +112,9 @@ class ModelEvaluator:
 
         total = len(ground_truth)
         if total == 0:
-            return self._empty_result(model_name)
+            result = self._empty_result(model_name)
+            self.results.append(result)
+            return result
 
         successes = 0
         failures = 0
