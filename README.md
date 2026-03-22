@@ -227,7 +227,11 @@ User opens InvoiceAI (http://localhost:5000)
 
 ### Model Evaluation
 - Built-in benchmarking framework at `/model_evaluation`
-- Compares extraction accuracy across all models using ground truth data
+- Comparison table evaluates 4 models individually across different data domains:
+  - **Gemini 3 Flash Preview** — LLM Vision + Text
+  - **Phi 3.5 via Ollama** — Local LLM (Text), shows "Skipped" status if Ollama is unavailable
+  - **Tesseract OCR** — Image OCR
+  - **DiT Document Classifier** — Image Classification (Vision Transformer)
 - Measures processing time, field-level accuracy, and failure rates
 
 ---
@@ -392,7 +396,8 @@ InvoiceAI/
 │   ├── test_pdf_processor.py
 │   ├── test_document_classifier.py
 │   ├── test_audio_processor.py
-│   └── test_bank_statement_converter.py
+│   ├── test_bank_statement_converter.py
+│   └── test_model_evaluation.py
 └── uploads/                    # Uploaded files (PDFs, images)
     └── voice_notes/            # Audio uploads for Whisper
 ```
@@ -462,7 +467,7 @@ The application works entirely offline with local models:
 
 ## Testing
 
-The project includes a comprehensive **pytest** test suite with **86 test functions** across 7 test modules, covering all core managers, processors, and AI model wrappers.
+The project includes a comprehensive **pytest** test suite with **129 test functions** across 8 test modules, covering all core managers, processors, AI model wrappers, and the model evaluation framework.
 
 ### Running Tests
 
@@ -491,6 +496,7 @@ pytest tests/test_currency_manager.py::test_usd_to_eur -v
 | `test_document_classifier.py` | 8 | DiT model initialisation, RVL-CDIP label to app type mapping, supported document types, model info reporting, nonexistent file handling |
 | `test_audio_processor.py` | 13 | Whisper model initialisation (default/custom/fallback), supported format validation (MP3, WAV, M4A, OGG, FLAC, WebM), unsupported format rejection, model info, available models listing, error handling for missing files |
 | `test_bank_statement_converter.py` | 13 | Column auto-detection (standard and alternative header names), Excel format detection, conversion to standard format, currency-aware cross-currency matching (USD→PKR with SWIFT fee tolerance), directional matching (debit→expense, credit→income with fallback), no-match when bank exceeds invoice, output column validation, empty invoice edge case |
+| `test_model_evaluation.py` | 43 | Evaluator init, ground truth loading (valid/missing), field accuracy (exact/case-insensitive/numeric/date/fuzzy/substring/missing), numeric comparison (tolerance bands, zero handling, invalid input), date comparison (same/cross-format, proximity scoring), fuzzy string matching (Jaccard similarity, edge cases), Word Error Rate (WER) calculation, extraction model evaluation (mock extract, no ground truth, failing model, missing files), model comparison rankings (best accuracy, fastest, most reliable), empty result structure validation |
 
 ### Test Fixtures (conftest.py)
 
@@ -526,12 +532,19 @@ InvoiceAI includes a built-in benchmarking system (`model_evaluation.py`) for sy
 
 ### Evaluation Types
 
-The framework supports three distinct evaluation methods, one for each model category:
+The framework evaluates 4 models individually in the comparison table, plus supports classification and transcription evaluation:
 
-| Evaluation Method | Models Evaluated | Metrics Produced |
-|-------------------|-----------------|-----------------|
-| `evaluate_extraction_model()` | Gemini, Mistral, Ollama | Overall accuracy, per-field accuracy, avg processing time, failure rate |
-| `evaluate_classification_model()` | DiT (RVL-CDIP) | Classification accuracy, per-file confidence scores, avg processing time |
+| Model in Comparison Table | Domain | Evaluation Method | Metrics Produced |
+|---------------------------|--------|-------------------|-----------------|
+| **Gemini 3 Flash Preview** | LLM Vision + Text | `evaluate_extraction_model()` | Overall accuracy, per-field accuracy, avg processing time, failure rate |
+| **Phi 3.5 via Ollama** | Local LLM (Text) | `evaluate_extraction_model()` | Same as above; shows "Skipped" status if Ollama is not running |
+| **Tesseract OCR** | Image (OCR) | `evaluate_extraction_model()` | Overall accuracy, avg processing time, failure rate |
+| **DiT Document Classifier** | Image Classification | `evaluate_classification_model()` | Classification accuracy, per-file confidence scores, avg processing time |
+
+Additional evaluation methods available:
+
+| Evaluation Method | Models | Metrics Produced |
+|-------------------|--------|-----------------|
 | `evaluate_transcription_model()` | Whisper | Word Error Rate (WER), transcription accuracy (1 - WER), avg processing time |
 
 ### Field-Level Accuracy Scoring
