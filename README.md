@@ -627,10 +627,10 @@ Evaluation against 6 sample invoices (EUR, USD, PKR, BGN currencies including a 
 
 | Model | Domain | Accuracy | Avg Time | Failure Rate |
 |-------|--------|----------|----------|-------------|
-| **Gemini 3 Flash Preview** | LLM Vision + Text | 87.1% | ~2-4s | 0% |
-| **Phi 3.5 via Ollama** | Local LLM (Text) | 84.7% | ~3-6s | 0% |
-| **DiT (RVL-CDIP)** | Image Classification | 66.7% | ~1s | 0% |
-| **Tesseract OCR** | Image (OCR) | 0.0% | <1s | 0% |
+| **Gemini 3 Flash Preview** | Cloud LLM (Vision + Text) | 87.1% | 100.5s | 0% |
+| **Phi 3.5 via Ollama** | Local LLM (Text) | 84.7% | 53.3s | 0% |
+| **DiT Document Classifier** | Image Classification (ViT) | 66.7% | 2.0s | 0% |
+| **Tesseract OCR** | Image (OCR) | 0.0% | 1.1s | 0% |
 
 **Notes:**
 - Tesseract's 0% accuracy is expected — it outputs raw OCR text, not structured field extraction, so field-level comparison scores zero
