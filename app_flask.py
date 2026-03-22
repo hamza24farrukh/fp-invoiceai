@@ -3,6 +3,7 @@ import re
 import json
 import tempfile
 import time
+import threading
 from io import BytesIO
 from datetime import datetime
 # Note: use app.logger for logging (Flask built-in)
@@ -64,6 +65,9 @@ def _get_processing_type_label(options):
 
 # Create uploads folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Upload progress tracking (keyed by session-based upload ID)
+_upload_progress = {}
 
 # Initialize supplier manager
 supplier_manager = SupplierManager()
@@ -132,11 +136,23 @@ def model_status():
     }
     return jsonify(status)
 
+
+@app.route('/api/upload_progress/<upload_id>')
+def upload_progress(upload_id):
+    """Return current upload processing progress."""
+    progress = _upload_progress.get(upload_id, {
+        'current': 0, 'total': 0, 'percent': 0,
+        'status': 'unknown', 'current_file': '', 'step': ''
+    })
+    return jsonify(progress)
+
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
         # Read processing mode from form
         processing_mode = request.form.get('processing_mode', 'auto')
+        upload_id = request.form.get('upload_id', '')
         app.logger.info(f"Processing mode: {processing_mode}")
 
         # Check if any file was uploaded
@@ -145,17 +161,25 @@ def upload_file():
             return redirect(request.url)
 
         files = request.files.getlist('files[]')
-        
+
         # Check if any file was selected
         if not files or files[0].filename == '':
             flash('No selected file')
             return redirect(request.url)
-        
+
         # Process each file
         all_extracted_data = []
         new_suppliers = []
         invoices_changed = False
-        
+
+        # Initialize progress tracking
+        total_files = len(files)
+        if upload_id:
+            _upload_progress[upload_id] = {
+                'current': 0, 'total': total_files, 'percent': 0,
+                'status': 'processing', 'current_file': '', 'step': 'Starting...'
+            }
+
         # Initialize document classifier once for all files
         from document_classifier import DocumentClassifier
         classifier = DocumentClassifier()
@@ -172,6 +196,14 @@ def upload_file():
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
+
+                # Update progress: starting this file
+                if upload_id:
+                    _upload_progress[upload_id].update({
+                        'current': i, 'current_file': filename,
+                        'percent': int((i / total_files) * 100),
+                        'step': f'Classifying document ({i+1}/{total_files})'
+                    })
 
                 try:
                     app.logger.info(f"Processing file {i+1}/{len(files)}: {filename}")
@@ -210,6 +242,13 @@ def upload_file():
                         existing_suppliers = [s.get('supplier_name', '') for s in all_suppliers if s.get('supplier_name')]
                         app.logger.info(f"Found {len(existing_suppliers)} existing suppliers in database")
                     
+                    # Update progress: AI extraction starting
+                    if upload_id:
+                        _upload_progress[upload_id].update({
+                            'step': f'Extracting data with AI ({i+1}/{total_files})',
+                            'percent': int(((i + 0.3) / total_files) * 100)
+                        })
+
                     # Add retry logic for API quota errors
                     max_retries = 5  # Increased retries
                     retry_count = 0
@@ -273,6 +312,13 @@ def upload_file():
                                 break
                     
                     if extracted_data:
+                        # Update progress: matching with records
+                        if upload_id:
+                            _upload_progress[upload_id].update({
+                                'step': f'Matching with records ({i+1}/{total_files})',
+                                'percent': int(((i + 0.7) / total_files) * 100)
+                            })
+
                         # Check if supplier is new and convert data to our expected format
                         for raw_data in extracted_data:
                             # Map fields from the RAG extraction format to our internal format
@@ -721,13 +767,31 @@ def upload_file():
                             'vat_number': data['vat_number']
                         })
             
+            # Mark progress complete
+            if upload_id:
+                _upload_progress[upload_id].update({
+                    'current': total_files, 'percent': 100,
+                    'status': 'complete', 'step': 'Done!'
+                })
+
             # Store data in session
             session['extracted_data'] = all_extracted_data
             session['new_suppliers'] = new_suppliers
             session['updated_vat_numbers'] = updated_vat_numbers
-            
+
+            # Clean up progress after a delay
+            if upload_id:
+                def cleanup():
+                    time.sleep(10)
+                    _upload_progress.pop(upload_id, None)
+                threading.Thread(target=cleanup, daemon=True).start()
+
             return redirect(url_for('results'))
         else:
+            if upload_id:
+                _upload_progress[upload_id].update({
+                    'status': 'complete', 'percent': 100, 'step': 'No data extracted'
+                })
             flash('No data could be successfully extracted from any of the uploaded files')
             return redirect(request.url)
     

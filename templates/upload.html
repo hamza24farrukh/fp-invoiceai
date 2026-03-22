@@ -135,13 +135,17 @@
 
                     <div id="file-list" class="mt-3"></div>
 
+                    <!-- Hidden field for upload tracking ID -->
+                    <input type="hidden" name="upload_id" id="upload-id" value="">
+
                     <!-- Progress Loading Indicator (Hidden by default) -->
                     <div id="upload-progress" class="mt-4" style="display: none;">
-                        <div class="progress mb-3">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        <div class="progress mb-3" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
                         </div>
                         <div class="text-center">
-                            <p id="progress-status">Processing files... This may take a while.</p>
+                            <p id="progress-status" class="fw-bold mb-1">Processing files...</p>
+                            <p id="progress-file" class="text-muted small mb-0"></p>
                             <p class="text-muted small">Extracting data with AI. Please don't close the browser window.</p>
                         </div>
                     </div>
@@ -333,55 +337,51 @@
             else return (bytes / 1048576).toFixed(1) + ' MB';
         }
 
-        // Form submission handler - show progress indicator
+        // Form submission handler - show real progress
         if (uploadForm) {
             uploadForm.addEventListener('submit', function(e) {
+                // Generate a unique upload ID and set it in the hidden field
+                const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                document.getElementById('upload-id').value = uploadId;
+
                 // Show progress indicator
                 uploadProgress.style.display = 'block';
                 submitBtn.disabled = true;
 
-                // Simulate progress (since we can't measure actual AI processing progress)
-                let progress = 0;
-                const totalFiles = fileInput.files.length;
-                const mode = document.getElementById('processing-mode').value;
-                // Local mode is slower (~55s per file), cloud is faster (~10s)
-                const timePerFile = mode === 'local' ? 55000 : 10000;
-                const totalTime = totalFiles * timePerFile;
-                const interval = 500; // Update every 500ms
+                const progressFile = document.getElementById('progress-file');
 
-                const progressInterval = setInterval(function() {
-                    progress += (interval / totalTime) * 100;
-                    if (progress > 95) progress = 95; // Cap at 95% until complete
+                // Poll the server for real progress
+                const pollInterval = setInterval(function() {
+                    fetch('/api/upload_progress/' + uploadId)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'unknown') return; // Not started yet
 
-                    progressBar.style.width = Math.min(progress, 100) + '%';
+                            const pct = Math.min(data.percent, 100);
+                            progressBar.style.width = pct + '%';
+                            progressBar.textContent = pct + '%';
 
-                    // Update status message based on mode
-                    if (mode === 'local') {
-                        if (progress < 20) {
-                            progressStatus.textContent = "Running Tesseract OCR on documents...";
-                        } else if (progress < 60) {
-                            progressStatus.textContent = "Extracting data with local Ollama model (this takes longer)...";
-                        } else if (progress < 90) {
-                            progressStatus.textContent = "Matching with existing records...";
-                        } else {
-                            progressStatus.textContent = "Almost done! Finalizing results...";
-                        }
-                    } else {
-                        if (progress < 30) {
-                            progressStatus.textContent = "Uploading and analyzing files...";
-                        } else if (progress < 60) {
-                            progressStatus.textContent = "Extracting supplier information...";
-                        } else if (progress < 90) {
-                            progressStatus.textContent = "Processing with AI and matching with existing records...";
-                        } else {
-                            progressStatus.textContent = "Almost done! Finalizing results...";
-                        }
-                    }
+                            if (data.step) {
+                                progressStatus.textContent = data.step;
+                            }
+                            if (data.current_file) {
+                                progressFile.textContent = 'File: ' + data.current_file + ' (' + (data.current + 1) + '/' + data.total + ')';
+                            }
 
-                }, interval);
+                            if (data.status === 'complete') {
+                                clearInterval(pollInterval);
+                                progressBar.style.width = '100%';
+                                progressBar.textContent = '100%';
+                                progressStatus.textContent = 'Done! Redirecting...';
+                            }
+                        })
+                        .catch(function() {
+                            // Ignore poll errors (page may be redirecting)
+                        });
+                }, 1000);
 
-                // Store the interval ID in sessionStorage for potential use later
-                sessionStorage.setItem('progressIntervalId', progressInterval);
+                // Store interval for cleanup
+                sessionStorage.setItem('progressIntervalId', pollInterval);
             });
         }
     });
