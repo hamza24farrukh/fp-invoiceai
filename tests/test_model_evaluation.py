@@ -111,13 +111,41 @@ class TestFieldAccuracy:
         )
         assert 'transactor' not in scores
 
-    def test_substring_containment(self):
+    def test_ai_key_normalization(self):
+        """AI returns 'Transactor', 'Invoice Date' etc. — should map to ground truth keys."""
+        evaluator = ModelEvaluator()
+        scores = evaluator._calculate_field_accuracy(
+            {'Transactor': 'Acme Corp', 'Invoice Date': '2025-01-15', 'Amount': 100.0},
+            {'transactor': 'Acme Corp', 'date': '2025-01-15', 'amount': 100.0}
+        )
+        assert scores['transactor'] == 1.0
+        assert scores['date'] == 1.0
+        assert scores['amount'] == 1.0
+
+    def test_list_description_handling(self):
+        """AI sometimes returns description as a list."""
+        evaluator = ModelEvaluator()
+        scores = evaluator._calculate_field_accuracy(
+            {'Description': ['Service A', 'Service B']},
+            {'description': 'Service A, Service B'}
+        )
+        assert scores['description'] >= 0.5
+
+    def test_description_fuzzy_match(self):
         evaluator = ModelEvaluator()
         scores = evaluator._calculate_field_accuracy(
             {'description': 'Software Development Services'},
             {'description': 'Software Development'}
         )
-        assert scores['description'] == 0.8
+        assert scores['description'] > 0.5
+
+    def test_substring_containment(self):
+        evaluator = ModelEvaluator()
+        scores = evaluator._calculate_field_accuracy(
+            {'currency': 'EUR - Euro'},
+            {'currency': 'EUR'}
+        )
+        assert scores['currency'] == 0.8
 
 
 class TestNumericComparison:

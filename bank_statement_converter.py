@@ -235,13 +235,15 @@ class BankStatementConverter:
         income_candidates = []
 
         for inv in invoices:
-            inv_amount = inv.get('amount') or 0.0
-            inv_currency = inv.get('currency', bank_currency)
-
+            # Use total (amount + vat) since banks transact the gross amount
             try:
-                inv_amount = float(inv_amount)
+                base_amount = float(inv.get('amount') or 0)
+                vat_amount = float(inv.get('vat') or 0)
             except (ValueError, TypeError):
                 continue
+
+            inv_amount = base_amount + vat_amount if vat_amount > 0 else base_amount
+            inv_currency = inv.get('currency', bank_currency)
 
             if inv_amount <= 0:
                 continue
@@ -280,13 +282,14 @@ class BankStatementConverter:
             else:
                 continue
 
+            is_debit = pd.notna(debit) and float(debit or 0) > 0
             best_match = self._find_best_match(
-                row, primary_candidates, trans_amount, date_tolerance_days, amount_tolerance_pct
+                row, primary_candidates, trans_amount, date_tolerance_days, amount_tolerance_pct, is_debit
             )
             # If no match in primary direction, try all invoices as fallback
             if not best_match and fallback_candidates:
                 best_match = self._find_best_match(
-                    row, fallback_candidates, trans_amount, date_tolerance_days, amount_tolerance_pct
+                    row, fallback_candidates, trans_amount, date_tolerance_days, amount_tolerance_pct, is_debit
                 )
             if best_match:
                 result.at[idx, 'matched_supplier'] = best_match.get('transactor')
@@ -509,13 +512,16 @@ class BankStatementConverter:
         candidates: List[Tuple[Dict[str, Any], float]],
         trans_amount: float,
         date_tolerance_days: int,
-        amount_tolerance_pct: float
+        amount_tolerance_pct: float,
+        is_debit: bool = False
     ) -> Optional[Dict[str, Any]]:
         """
         Find the best matching invoice for a bank transaction using currency-aware scoring.
 
         Scoring weights: amount (0.55) > date (0.20) > name (0.15) > invoice number (0.10).
-        Amount comparison accounts for international transfer deductions (SWIFT fees, taxes).
+        Amount comparison accounts for international transfer fees.
+        For debits (outgoing), bank may charge MORE than invoice (fees added on top).
+        For credits (incoming), bank amount is typically LESS (SWIFT fees deducted).
 
         Args:
             transaction: A row from the standardized bank statement
@@ -523,6 +529,7 @@ class BankStatementConverter:
             trans_amount: The transaction amount in bank currency
             date_tolerance_days: Max days difference for date matching
             amount_tolerance_pct: Max percentage deduction allowed (e.g. 0.15 = 15%)
+            is_debit: True if this is a debit (outgoing) transaction
 
         Returns:
             Best matching invoice dict with confidence and match details, or None
@@ -543,24 +550,41 @@ class BankStatementConverter:
             amount_score = 0.0
             pct_diff = 0.0
             if converted_amount > 0 and trans_amount > 0:
+                # pct_diff > 0 means bank paid LESS than invoice (fees deducted)
+                # pct_diff < 0 means bank paid MORE than invoice (fees added on top)
                 pct_diff = (converted_amount - trans_amount) / converted_amount
+                abs_diff = abs(pct_diff)
 
-                if trans_amount > converted_amount * 1.02:
-                    # Bank received MORE than invoice amount (unlikely, 2% rounding buffer)
-                    amount_score = 0.0
-                elif pct_diff <= 0.005:
-                    # Near-exact match (within 0.5%)
-                    amount_score = 0.55
-                    method_parts.append('exact_amount')
-                elif pct_diff <= 0.05:
-                    # Within 5% — typical small bank fee
-                    amount_score = 0.50
-                    method_parts.append('close_amount')
-                elif pct_diff <= amount_tolerance_pct:
-                    # Within tolerance — linear decay from 0.45 to 0.20
-                    normalized = (pct_diff - 0.05) / (amount_tolerance_pct - 0.05)
-                    amount_score = 0.45 - (normalized * 0.25)
-                    method_parts.append('approx_amount')
+                if is_debit:
+                    # DEBIT (outgoing): bank may add transfer fees, so bank > invoice is normal
+                    # Allow up to 10% overage for fees + exchange rate differences
+                    if trans_amount > converted_amount * 1.10:
+                        amount_score = 0.0  # Too much over — not a match
+                    elif abs_diff <= 0.005:
+                        amount_score = 0.55
+                        method_parts.append('exact_amount')
+                    elif abs_diff <= 0.05:
+                        amount_score = 0.50
+                        method_parts.append('close_amount')
+                    elif abs_diff <= amount_tolerance_pct:
+                        normalized = (abs_diff - 0.05) / (amount_tolerance_pct - 0.05)
+                        amount_score = 0.45 - (normalized * 0.25)
+                        method_parts.append('approx_amount')
+                else:
+                    # CREDIT (incoming): SWIFT fees are deducted, so bank < invoice is normal
+                    # Bank should NOT receive more than owed (2% rounding buffer)
+                    if trans_amount > converted_amount * 1.02:
+                        amount_score = 0.0
+                    elif pct_diff <= 0.005:
+                        amount_score = 0.55
+                        method_parts.append('exact_amount')
+                    elif pct_diff <= 0.05:
+                        amount_score = 0.50
+                        method_parts.append('close_amount')
+                    elif pct_diff <= amount_tolerance_pct:
+                        normalized = (pct_diff - 0.05) / (amount_tolerance_pct - 0.05)
+                        amount_score = 0.45 - (normalized * 0.25)
+                        method_parts.append('approx_amount')
 
             score += amount_score
 
@@ -613,10 +637,12 @@ class BankStatementConverter:
                 method_parts.append('invoice_number')
 
             # Accept match if score meets minimum threshold
-            if score > best_score and score >= 0.25:
+            if score > best_score and score >= 0.30:
                 best_score = score
                 inv_currency = invoice.get('currency', 'PKR')
-                inv_amount = invoice.get('amount', 0)
+                inv_base = float(invoice.get('amount', 0) or 0)
+                inv_vat = float(invoice.get('vat', 0) or 0)
+                inv_total = inv_base + inv_vat if inv_vat > 0 else inv_base
                 best_match = {
                     **invoice,
                     'confidence': round(score * 100),
@@ -625,7 +651,7 @@ class BankStatementConverter:
                     'amount_difference_pct': round(pct_diff * 100, 1),
                     'match_details': (
                         f"Invoice {invoice.get('invoice_number', 'N/A')}: "
-                        f"{inv_amount} {inv_currency} = {converted_amount:,.2f} PKR, "
+                        f"{inv_total} {inv_currency} (net {inv_base} + VAT {inv_vat}) = {converted_amount:,.2f} PKR, "
                         f"bank: {trans_amount:,.2f} PKR "
                         f"(diff: {pct_diff * 100:.1f}%)"
                     )

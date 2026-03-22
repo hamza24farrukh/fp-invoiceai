@@ -1,38 +1,80 @@
 [
-    {
-        "file": "sample_invoice_001.pdf",
-        "expected": {
-            "transactor": "Acme Corp",
-            "invoice_number": "INV-2024-001",
-            "date": "2024-01-15",
-            "amount": 250.00,
-            "vat": 50.00,
-            "currency": "EUR"
-        },
-        "expected_type": "invoice"
-    },
-    {
-        "file": "sample_invoice_002.pdf",
-        "expected": {
-            "transactor": "Tech Solutions Ltd",
-            "invoice_number": "TS-2024-0042",
-            "date": "2024-02-20",
-            "amount": 1500.00,
-            "vat": 300.00,
-            "currency": "USD"
-        },
-        "expected_type": "invoice"
-    },
-    {
-        "file": "sample_receipt_001.jpg",
-        "expected": {
-            "transactor": "Office Supplies Co",
-            "invoice_number": "REC-5678",
-            "date": "2024-03-01",
-            "amount": 45.99,
-            "vat": 9.20,
-            "currency": "EUR"
-        },
-        "expected_type": "receipt"
+  {
+    "file": "invoice techsolutions eur.pdf",
+    "expected_type": "invoice",
+    "expected": {
+      "transactor": "TechSolutions GmbH",
+      "invoice_number": "TS-2025-0847",
+      "date": "2025-01-15",
+      "amount": 7124.00,
+      "vat": 1353.56,
+      "currency": "EUR",
+      "description": "Cloud infrastructure, API development, AI model integration, server hosting"
     }
+  },
+  {
+    "file": "invoice cloudware usd.pdf",
+    "expected_type": "invoice",
+    "expected": {
+      "transactor": "CloudWare Inc.",
+      "invoice_number": "CW-2025-1203",
+      "date": "2025-02-03",
+      "amount": 8520.89,
+      "vat": 0,
+      "currency": "USD",
+      "description": "SaaS license, data migration, API integration, technical support"
+    }
+  },
+  {
+    "file": "invoice karachi digital pkr.pdf",
+    "expected_type": "invoice",
+    "expected": {
+      "transactor": "Karachi Digital Services",
+      "invoice_number": "KDS-2025-0312",
+      "date": "2025-01-28",
+      "amount": 435500,
+      "vat": 74035,
+      "currency": "PKR",
+      "description": "Website design, mobile app UI/UX, SEO optimization, social media management, domain and hosting"
+    }
+  },
+  {
+    "file": "invoice sofia consulting bgn.pdf",
+    "expected_type": "invoice",
+    "expected": {
+      "transactor": "Sofia Consulting EOOD",
+      "invoice_number": "SC-2025-0056",
+      "date": "2025-02-10",
+      "amount": 3685.00,
+      "vat": 737.00,
+      "currency": "BGN",
+      "description": "Business strategy consultation, market research, financial analysis, translation services"
+    }
+  },
+  {
+    "file": "credit note techsolutions eur.pdf",
+    "expected_type": "credit_note",
+    "expected": {
+      "transactor": "TechSolutions GmbH",
+      "invoice_number": "CN-2025-0023",
+      "date": "2025-02-20",
+      "amount": 118.50,
+      "vat": 22.52,
+      "currency": "EUR",
+      "description": "Credit note - hosting adjustment and API overcharge correction"
+    }
+  },
+  {
+    "file": "receipt designhub usd.pdf",
+    "expected_type": "receipt",
+    "expected": {
+      "transactor": "DesignHub Studio",
+      "invoice_number": "DH-R-2025-0089",
+      "date": "2025-02-18",
+      "amount": 725.00,
+      "vat": 62.53,
+      "currency": "USD",
+      "description": "Logo design, brand guidelines, social media kit"
+    }
+  }
 ]

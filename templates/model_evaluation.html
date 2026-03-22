@@ -103,12 +103,16 @@
                                 </td>
                                 {% else %}
                                 <td>
-                                    {% set acc = model.accuracy or 0 %}
-                                    <div class="progress" style="min-width: 120px;">
-                                        <div class="progress-bar {% if acc >= 0.8 %}bg-success{% elif acc >= 0.5 %}bg-warning{% else %}bg-danger{% endif %}"
-                                             style="width: {{ (acc * 100)|int }}%">
-                                            {{ "%.1f"|format(acc * 100) }}%
+                                    {% set acc = model.accuracy if model.accuracy is defined and model.accuracy is not none else 0 %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="min-width: 80px; height: 20px;">
+                                            <div class="progress-bar {% if acc >= 0.8 %}bg-success{% elif acc >= 0.5 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 style="width: {{ [acc * 100, 3]|max|int }}%">
+                                            </div>
                                         </div>
+                                        <strong class="{% if acc >= 0.8 %}text-success{% elif acc >= 0.5 %}text-warning{% else %}text-danger{% endif %}" style="min-width: 50px;">
+                                            {{ "%.1f"|format(acc * 100) }}%
+                                        </strong>
                                     </div>
                                 </td>
                                 <td>{{ "%.3f"|format(model.avg_time or 0) }}s</td>

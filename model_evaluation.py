@@ -470,6 +470,35 @@ class ModelEvaluator:
             logger.error(f"Failed to save results: {str(e)}")
             raise
 
+    def _normalize_extracted_keys(self, extracted: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize extracted field keys to match ground truth format.
+
+        AI extractors return keys like 'Transactor', 'Invoice Number', 'Amount'
+        but ground truth uses 'transactor', 'invoice_number', 'amount'.
+        This maps between the two formats.
+        """
+        key_map = {
+            'Transactor': 'transactor',
+            'Invoice Number': 'invoice_number',
+            'Amount': 'amount',
+            'Tax Amount': 'vat',
+            'VAT Amount': 'vat',
+            'VAT': 'vat_number',
+            'Date': 'date',
+            'Invoice Date': 'date',
+            'Currency': 'currency',
+            'Description': 'description',
+            'Expense Category Account': 'category',
+            'Kind of Transaction': 'transaction_type',
+            'Total Amount': 'total_amount',
+        }
+        normalized = {}
+        for key, value in extracted.items():
+            norm_key = key_map.get(key, key.lower().replace(' ', '_'))
+            normalized[norm_key] = value
+        return normalized
+
     def _calculate_field_accuracy(
         self,
         extracted: Dict[str, Any],
@@ -486,6 +515,8 @@ class ModelEvaluator:
             Dictionary mapping field names to accuracy scores (0.0 or 1.0 for exact,
             0.0-1.0 for fuzzy matches)
         """
+        # Normalize extracted keys to match ground truth format
+        extracted = self._normalize_extracted_keys(extracted)
         scores = {}
 
         for field, expected_value in expected.items():
@@ -497,6 +528,10 @@ class ModelEvaluator:
             if extracted_value is None:
                 scores[field] = 0.0
                 continue
+
+            # Handle list values from AI (e.g. description returned as array)
+            if isinstance(extracted_value, list):
+                extracted_value = '; '.join(str(v) for v in extracted_value)
 
             # Normalize both values for comparison
             exp_str = str(expected_value).strip().lower()
@@ -513,6 +548,9 @@ class ModelEvaluator:
             elif field in ['supplier_name', 'transactor']:
                 # Fuzzy string comparison for names
                 scores[field] = self._fuzzy_string_match(exp_str, ext_str)
+            elif field in ['description']:
+                # Fuzzy match for descriptions (AI often paraphrases)
+                scores[field] = self._fuzzy_string_match(exp_str, ext_str)
             else:
                 # Substring containment check
                 if exp_str in ext_str or ext_str in exp_str:
@@ -523,10 +561,10 @@ class ModelEvaluator:
         return scores
 
     def _compare_numeric(self, expected: Any, extracted: Any) -> float:
-        """Compare numeric values with tolerance."""
+        """Compare numeric values with tolerance. Uses absolute values to handle credit notes."""
         try:
-            exp_float = float(str(expected).replace(',', '.'))
-            ext_float = float(str(extracted).replace(',', '.'))
+            exp_float = abs(float(str(expected).replace(',', '.')))
+            ext_float = abs(float(str(extracted).replace(',', '.')))
             if exp_float == 0:
                 return 1.0 if ext_float == 0 else 0.0
             diff_pct = abs(exp_float - ext_float) / abs(exp_float)
