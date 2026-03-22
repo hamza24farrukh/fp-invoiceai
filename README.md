@@ -195,6 +195,7 @@ User opens InvoiceAI (http://localhost:5000)
 - Supports both text-based PDFs and scanned/photographed documents
 - **Processing Mode selector**: choose Auto (full fallback chain), Cloud AI Only (Gemini + Mistral), or Local Only (Tesseract + Ollama) on the upload page
 - **Model Status panel**: real-time green/red availability indicators for all 5 models via AJAX, visible before uploading
+- **Real-time upload progress**: live progress bar with per-file status updates during multi-file batch uploads via AJAX polling
 
 ### Document Classification
 - Every uploaded document is automatically classified by the DiT Vision Transformer
@@ -284,9 +285,15 @@ Each bank transaction is scored against every invoice using four weighted criter
 | **Supplier Name** | 0.15 (15%) | Lower | Checks if the supplier name (or significant words from it) appears in the bank transaction description or reference. |
 | **Invoice Number** | 0.10 (10%) | Lowest | Checks if the invoice number appears in the transaction description or reference. |
 
+### Gross Amount Matching
+
+The algorithm first attempts to match using the **gross amount** (net amount + VAT) from each invoice. If the invoice has both `amount` and `vat` fields, their sum is used as the comparison amount — this reflects how bank payments typically represent the full invoice total including tax. If no VAT is recorded, the net amount is used.
+
 ### Amount Scoring Detail
 
-The amount scoring accounts for the fact that international transfers typically **lose** money to fees — the received amount is always slightly less than the converted invoice amount:
+The amount scoring accounts for the fact that international transfers typically **lose** money to fees — the received amount is always slightly less than the converted invoice amount. The scoring is **direction-aware**:
+
+**Credit transactions (money received):**
 
 | Condition | Score | Interpretation |
 |-----------|-------|---------------|
@@ -294,6 +301,16 @@ The amount scoring accounts for the fact that international transfers typically 
 | Difference ≤ 0.5% | 0.55 | Near-exact match |
 | Difference ≤ 5% | 0.50 | Small bank fee deduction |
 | Difference ≤ 15% | 0.45 → 0.20 (linear decay) | Larger deductions (SWIFT fees, intermediary charges) |
+| Difference > 15% | 0.00 | Too large a discrepancy |
+
+**Debit transactions (money paid out):**
+
+| Condition | Score | Interpretation |
+|-----------|-------|---------------|
+| Bank amount > 110% of converted invoice | 0.00 | Allows up to 10% overage for bank charges added on top |
+| Difference ≤ 0.5% | 0.55 | Near-exact match |
+| Difference ≤ 5% | 0.50 | Small fee added |
+| Difference ≤ 15% | 0.45 → 0.20 (linear decay) | Larger surcharges |
 | Difference > 15% | 0.00 | Too large a discrepancy |
 
 ### Date Scoring Detail
@@ -317,7 +334,7 @@ This fallback ensures matching works even when invoices are not explicitly marke
 
 ### Match Threshold
 
-A minimum score of **0.25 (25%)** is required to accept a match. The highest-scoring invoice for each transaction is selected as the best match.
+A minimum score of **0.30 (30%)** is required to accept a match. The highest-scoring invoice for each transaction is selected as the best match.
 
 ### Output Columns
 
@@ -467,7 +484,7 @@ The application works entirely offline with local models:
 
 ## Testing
 
-The project includes a comprehensive **pytest** test suite with **129 test functions** across 8 test modules, covering all core managers, processors, AI model wrappers, and the model evaluation framework.
+The project includes a comprehensive **pytest** test suite with **132 test functions** across 8 test modules, covering all core managers, processors, AI model wrappers, and the model evaluation framework.
 
 ### Running Tests
 
@@ -496,7 +513,7 @@ pytest tests/test_currency_manager.py::test_usd_to_eur -v
 | `test_document_classifier.py` | 8 | DiT model initialisation, RVL-CDIP label to app type mapping, supported document types, model info reporting, nonexistent file handling |
 | `test_audio_processor.py` | 13 | Whisper model initialisation (default/custom/fallback), supported format validation (MP3, WAV, M4A, OGG, FLAC, WebM), unsupported format rejection, model info, available models listing, error handling for missing files |
 | `test_bank_statement_converter.py` | 13 | Column auto-detection (standard and alternative header names), Excel format detection, conversion to standard format, currency-aware cross-currency matching (USD→PKR with SWIFT fee tolerance), directional matching (debit→expense, credit→income with fallback), no-match when bank exceeds invoice, output column validation, empty invoice edge case |
-| `test_model_evaluation.py` | 43 | Evaluator init, ground truth loading (valid/missing), field accuracy (exact/case-insensitive/numeric/date/fuzzy/substring/missing), numeric comparison (tolerance bands, zero handling, invalid input), date comparison (same/cross-format, proximity scoring), fuzzy string matching (Jaccard similarity, edge cases), Word Error Rate (WER) calculation, extraction model evaluation (mock extract, no ground truth, failing model, missing files), model comparison rankings (best accuracy, fastest, most reliable), empty result structure validation |
+| `test_model_evaluation.py` | 46 | Evaluator init, ground truth loading (valid/missing), field accuracy (exact/case-insensitive/numeric/date/fuzzy/substring/missing), AI key normalisation (capitalised keys mapped to snake_case ground truth keys), list-to-string description handling, description fuzzy matching, numeric comparison (tolerance bands, zero handling, invalid input, absolute value for credit notes), date comparison (same/cross-format, proximity scoring), fuzzy string matching (Jaccard similarity, edge cases), Word Error Rate (WER) calculation, extraction model evaluation (mock extract, no ground truth, failing model, missing files), model comparison rankings (best accuracy, fastest, most reliable), empty result structure validation |
 
 ### Test Fixtures (conftest.py)
 
@@ -528,7 +545,8 @@ InvoiceAI includes a built-in benchmarking system (`model_evaluation.py`) for sy
 
 1. **Ground truth data** is stored in `benchmarks/ground_truth.json` — each entry contains a test file name, the expected extracted fields, and the expected document type
 2. The `ModelEvaluator` class runs each model against the test files, compares outputs to ground truth, and calculates metrics
-3. Results are displayed on the `/model_evaluation` web page and can be exported to `benchmarks/results.json`
+3. **Key normalisation** maps AI output keys (e.g., `"Transactor"`, `"Invoice Date"`, `"Tax Amount"`) to ground truth keys (`"transactor"`, `"date"`, `"vat"`), and list values (e.g., `["Service A", "Service B"]`) are joined into strings before comparison
+4. Results are displayed on the `/model_evaluation` web page and can be exported to `benchmarks/results.json`
 
 ### Evaluation Types
 
@@ -553,9 +571,10 @@ Extraction evaluation uses intelligent comparison methods tailored to each field
 
 | Field Type | Comparison Method | Scoring |
 |-----------|-------------------|---------|
-| **Amounts** (amount, vat, total) | Numeric comparison with tolerance | 1.0 if ≤0.1% diff, 0.8 if ≤5%, 0.5 if ≤10%, 0.0 otherwise |
+| **Amounts** (amount, vat, total) | Numeric comparison with tolerance, absolute values for credit notes | 1.0 if ≤0.1% diff, 0.8 if ≤5%, 0.5 if ≤10%, 0.0 otherwise |
 | **Dates** | Date parsing across 5 formats (YYYY-MM-DD, DD/MM/YYYY, etc.) | 1.0 if exact match, 0.8 if ≤1 day off, 0.5 if ≤7 days, 0.0 otherwise |
 | **Supplier names** | Fuzzy token-based matching (Jaccard similarity) | 0.0 to 1.0 based on token overlap between predicted and expected names |
+| **Descriptions** | Fuzzy token-based matching (Jaccard similarity) | 0.0 to 1.0 — handles AI paraphrasing of invoice descriptions |
 | **Other text fields** | Exact match + substring containment | 1.0 if exact, 0.8 if one contains the other, 0.0 otherwise |
 
 ### Word Error Rate (WER) for Whisper
@@ -602,6 +621,22 @@ Each entry specifies:
 - **expected** — the ground truth field values for extraction evaluation
 - **expected_type** — the ground truth document category for classification evaluation
 
+### Benchmark Results
+
+Evaluation against 6 sample invoices (EUR, USD, PKR, BGN currencies including a credit note and receipt):
+
+| Model | Domain | Accuracy | Avg Time | Failure Rate |
+|-------|--------|----------|----------|-------------|
+| **Gemini 3 Flash Preview** | LLM Vision + Text | 87.1% | ~2-4s | 0% |
+| **Phi 3.5 via Ollama** | Local LLM (Text) | 84.7% | ~3-6s | 0% |
+| **DiT (RVL-CDIP)** | Image Classification | 66.7% | ~1s | 0% |
+| **Tesseract OCR** | Image (OCR) | 0.0% | <1s | 0% |
+
+**Notes:**
+- Tesseract's 0% accuracy is expected — it outputs raw OCR text, not structured field extraction, so field-level comparison scores zero
+- DiT's 66.7% = 4 of 6 documents correctly classified (document type classification, not field extraction)
+- Gemini and Phi scores reflect field-level accuracy across all ground truth fields (amounts, dates, supplier names, descriptions, currency)
+
 ### Running Evaluations
 
 Via the web UI:
@@ -647,4 +682,4 @@ evaluator.export_results("benchmarks/results.json")
 
 ## License
 
-This project was developed as a university submission for CM3020 Artificial Intelligence, demonstrating the orchestration of multiple pre-trained AI models across different data domains to solve a real-world document processing problem.
+This project was developed as a university submission for CM3070 Final Project, demonstrating the orchestration of multiple pre-trained AI models across different data domains to solve a real-world document processing problem.
