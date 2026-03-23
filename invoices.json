@@ -8,14 +8,14 @@
         "categories": [
             "Software Services"
         ],
-        "transaction_type": "EXP. other countries",
+        "transaction_type": "EXPENSES with VAT",
         "vat_number": "",
         "amount": 520.89,
         "vat_amount": 0.0,
         "total_bgn": 145067.865,
         "total_euro": 145067.865,
         "currency": "USD",
-        "notes": "Extracted from 15-February-2026_1.pdf",
+        "notes": "[Voice Note - en, 30s]: Okay so this invoice is basically invoice in which I gave to a company for which I did services and they are going to pay me so this is invoice for that and code craft is the name under which this money will be received okay so this is a note for this.",
         "description": "Social Media Automation & Chatbot Development Services (Feb 2026). Includes chatbot workflow setup, backend automation development, and API integrations.",
         "is_income": 0,
         "file_path": "uploads\\15-February-2026_1.pdf",
@@ -84,6 +84,124 @@
         }
     },
     {
+        "invoice_id": 30,
+        "invoice_number": "CN-2025-0023",
+        "invoice_date": "2025-02-20",
+        "supplier_name": "TechSolutions GmbH",
+        "category": "Server Hosting",
+        "categories": [
+            "Server Hosting"
+        ],
+        "transaction_type": "REFUND",
+        "vat_number": "DE298745612",
+        "amount": 118.5,
+        "vat_amount": 22.52,
+        "total_bgn": 39556.11,
+        "total_euro": 39556.11,
+        "currency": "EUR",
+        "notes": "Extracted from credit_note_techsolutions_eur.pdf",
+        "description": "Service level adjustment - reduced hosting hours in January: Adjustment for unused hosting capacity (Jan 2025) and Overcharged API calls correction.",
+        "is_income": 0,
+        "file_path": "uploads\\credit_note_techsolutions_eur.pdf",
+        "raw_extraction": {
+            "Transactor": "TechSolutions GmbH",
+            "Expense Category Account": "Server Hosting",
+            "Kind of Transaction": "REFUND",
+            "VAT": "DE298745612",
+            "Invoice Number": "CN-2025-0023",
+            "Invoice Date": "2025-02-20",
+            "Amount": -118.5,
+            "Tax Amount": -22.52,
+            "Total Amount": -141.02,
+            "Currency": "EUR",
+            "Description": "Service level adjustment - reduced hosting hours in January: Adjustment for unused hosting capacity (Jan 2025) and Overcharged API calls correction.",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0,
+                "transactor": 1.0,
+                "vat": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 36,
+        "invoice_number": "CN-2025-0023",
+        "invoice_date": "2025-02-20",
+        "supplier_name": "TechSolutions GmbH",
+        "category": "Server Hosting",
+        "categories": [
+            "Server Hosting"
+        ],
+        "transaction_type": "REFUND",
+        "vat_number": "DE298745612",
+        "amount": 118.5,
+        "vat_amount": 22.52,
+        "total_bgn": 39556.11,
+        "total_euro": 39556.11,
+        "currency": "EUR",
+        "notes": "Extracted from credit_note_techsolutions_eur.pdf",
+        "description": "Service level adjustment - reduced hosting hours in January: Adjustment for unused hosting capacity (Jan 2025) and Overcharged API calls correction.",
+        "is_income": 0,
+        "file_path": "uploads\\credit_note_techsolutions_eur.pdf",
+        "raw_extraction": {
+            "Transactor": "TechSolutions GmbH",
+            "Expense Category Account": "Server Hosting",
+            "Kind of Transaction": "REFUND",
+            "VAT": "DE298745612",
+            "Invoice Number": "CN-2025-0023",
+            "Invoice Date": "2025-02-20",
+            "Amount": -118.5,
+            "Tax Amount": -22.52,
+            "Total Amount": -141.02,
+            "Currency": "EUR",
+            "Description": "Service level adjustment - reduced hosting hours in January: Adjustment for unused hosting capacity (Jan 2025) and Overcharged API calls correction.",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0,
+                "transactor": 1.0,
+                "vat": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 42,
+        "invoice_number": "credit_note_techsolutions_eur",
+        "invoice_date": "2025-02-20",
+        "supplier_name": "TechSolutions GmbH",
+        "category": "Server Hosting",
+        "categories": [
+            "Server Hosting"
+        ],
+        "transaction_type": "REFUND",
+        "vat_number": "DE298745612",
+        "amount": 118.5,
+        "vat_amount": 22.52,
+        "total_bgn": 39556.11,
+        "total_euro": 39556.11,
+        "currency": "EUR",
+        "notes": "Extracted from credit_note_techsolutions_eur.pdf",
+        "description": "Adjustment for unused hosting capacity (Jan 2025) and Overcharged API calls correction",
+        "is_income": 0,
+        "file_path": "uploads\\credit_note_techsolutions_eur.pdf",
+        "raw_extraction": {
+            "Transactor": "TechSolutions GmbH",
+            "Expense Category Account": "Hosting",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "DE298745612",
+            "Invoice Number": null,
+            "Invoice Date": "2025-02-20",
+            "Amount": -118.5,
+            "Tax Amount": -22.52,
+            "Total Amount": -141.02,
+            "Currency": "EUR",
+            "Description": "Adjustment for unused hosting capacity (Jan 2025) and Overcharged API calls correction"
+        }
+    },
+    {
         "invoice_id": 29,
         "invoice_number": "DH-R-2025-0089",
         "invoice_date": "2025-02-18",
@@ -126,7 +244,169 @@
         }
     },
     {
+        "invoice_id": 35,
+        "invoice_number": "DH-R-2025-0089",
+        "invoice_date": "2025-02-18",
+        "supplier_name": "DesignHub Studio",
+        "category": "Design Services",
+        "categories": [
+            "Design Services"
+        ],
+        "transaction_type": "EXPENSES with VAT",
+        "vat_number": "94-3456789",
+        "amount": 725.0,
+        "vat_amount": 62.53,
+        "total_bgn": 219327.10499999998,
+        "total_euro": 219327.10499999998,
+        "currency": "USD",
+        "notes": "Extracted from receipt_designhub_usd.pdf",
+        "description": "Logo Design Package, Brand Guidelines Doc, Social Media Kit",
+        "is_income": 0,
+        "file_path": "uploads\\receipt_designhub_usd.pdf",
+        "raw_extraction": {
+            "Transactor": "DesignHub Studio",
+            "Expense Category Account": "Design Services",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "94-3456789",
+            "Invoice Number": "DH-R-2025-0089",
+            "Invoice Date": "2025-02-18",
+            "Amount": 725.0,
+            "Tax Amount": 62.53,
+            "Total Amount": 787.53,
+            "Currency": "USD",
+            "Description": "Logo Design Package, Brand Guidelines Doc, Social Media Kit",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0,
+                "transactor": 1.0,
+                "vat": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 41,
+        "invoice_number": "DH-R-2025-0089",
+        "invoice_date": "2025-02-18",
+        "supplier_name": "DesignHub Studio",
+        "category": "Design Services",
+        "categories": [
+            "Design Services"
+        ],
+        "transaction_type": "EXPENSES with VAT",
+        "vat_number": "94-3456789",
+        "amount": 725.0,
+        "vat_amount": 62.53,
+        "total_bgn": 219327.10499999998,
+        "total_euro": 219327.10499999998,
+        "currency": "USD",
+        "notes": "Extracted from receipt_designhub_usd.pdf",
+        "description": "Logo Design Package, Brand Guidelines Doc, Social Media Kit",
+        "is_income": 0,
+        "file_path": "uploads\\receipt_designhub_usd.pdf",
+        "raw_extraction": {
+            "Transactor": "DesignHub Studio",
+            "Expense Category Account": "Design Services",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "94-3456789",
+            "Invoice Number": "DH-R-2025-0089",
+            "Invoice Date": "2025-02-18",
+            "Amount": 725.0,
+            "Tax Amount": 62.53,
+            "Total Amount": 787.53,
+            "Currency": "USD",
+            "Description": "Logo Design Package, Brand Guidelines Doc, Social Media Kit",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0
+            }
+        }
+    },
+    {
         "invoice_id": 27,
+        "invoice_number": "SC-2025-0056",
+        "invoice_date": "2025-02-10",
+        "supplier_name": "Sofia Consulting EOOD",
+        "category": "Consulting and Professional Services",
+        "categories": [
+            "Consulting and Professional Services"
+        ],
+        "transaction_type": "EXPENSES with VAT",
+        "vat_number": "BG203948576",
+        "amount": 3685.0,
+        "vat_amount": 737.0,
+        "total_bgn": 634114.8,
+        "total_euro": 634114.8,
+        "currency": "BGN",
+        "notes": "Extracted from invoice_sofia_consulting_bgn.pdf",
+        "description": "Business Strategy Consultation (8 hours @ 120 BGN/hr); Market Research Report - Eastern European Tech Sector; Financial Analysis & Projections Document; Translation Services (EN-BG, 15 pages)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_sofia_consulting_bgn.pdf",
+        "raw_extraction": {
+            "Transactor": "Sofia Consulting EOOD",
+            "Expense Category Account": "Consulting and Professional Services",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "BG203948576",
+            "Invoice Number": "SC-2025-0056",
+            "Invoice Date": "2025-02-10",
+            "Amount": 3685.0,
+            "Tax Amount": 737.0,
+            "Total Amount": 4422.0,
+            "Currency": "BGN",
+            "Description": "Business Strategy Consultation (8 hours @ 120 BGN/hr); Market Research Report - Eastern European Tech Sector; Financial Analysis & Projections Document; Translation Services (EN-BG, 15 pages)",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 33,
+        "invoice_number": "SC-2025-0056",
+        "invoice_date": "2025-02-10",
+        "supplier_name": "Sofia Consulting EOOD",
+        "category": "Consulting and Professional Services",
+        "categories": [
+            "Consulting and Professional Services"
+        ],
+        "transaction_type": "EXPENSES with VAT",
+        "vat_number": "BG203948576",
+        "amount": 3685.0,
+        "vat_amount": 737.0,
+        "total_bgn": 634114.8,
+        "total_euro": 634114.8,
+        "currency": "BGN",
+        "notes": "Extracted from invoice_sofia_consulting_bgn.pdf",
+        "description": "Business Strategy Consultation (8 hours @ 120 BGN/hr); Market Research Report - Eastern European Tech Sector; Financial Analysis & Projections Document; Translation Services (EN-BG, 15 pages)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_sofia_consulting_bgn.pdf",
+        "raw_extraction": {
+            "Transactor": "Sofia Consulting EOOD",
+            "Expense Category Account": "Consulting and Professional Services",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "BG203948576",
+            "Invoice Number": "SC-2025-0056",
+            "Invoice Date": "2025-02-10",
+            "Amount": 3685.0,
+            "Tax Amount": 737.0,
+            "Total Amount": 4422.0,
+            "Currency": "BGN",
+            "Description": "Business Strategy Consultation (8 hours @ 120 BGN/hr); Market Research Report - Eastern European Tech Sector; Financial Analysis & Projections Document; Translation Services (EN-BG, 15 pages)",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 39,
         "invoice_number": "SC-2025-0056",
         "invoice_date": "2025-02-10",
         "supplier_name": "Sofia Consulting EOOD",
@@ -214,7 +494,217 @@
         }
     },
     {
+        "invoice_id": 31,
+        "invoice_number": "CW-2025-1203",
+        "invoice_date": "2025-02-03",
+        "supplier_name": "CloudWare Inc.",
+        "category": "Software and SaaS Services",
+        "categories": [
+            "Software and SaaS Services"
+        ],
+        "transaction_type": "EXP. other countries",
+        "vat_number": "82-1234567",
+        "amount": 8520.89,
+        "vat_amount": 0.0,
+        "total_bgn": 2373067.8649999998,
+        "total_euro": 2373067.8649999998,
+        "currency": "USD",
+        "notes": "Extracted from invoice_cloudware_usd.pdf",
+        "description": "Annual SaaS License - Enterprise Plan; Data Migration & Onboarding Service (12 hours); Custom API Integration Development (8 hours); Priority Technical Support (Q1 2025)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_cloudware_usd.pdf",
+        "raw_extraction": {
+            "Transactor": "CloudWare Inc.",
+            "Expense Category Account": "Software and SaaS Services",
+            "Kind of Transaction": "EXP. other countries",
+            "VAT": "82-1234567",
+            "Invoice Number": "CW-2025-1203",
+            "Invoice Date": "2025-02-03",
+            "Amount": 8520.89,
+            "Tax Amount": 0.0,
+            "Total Amount": 8520.89,
+            "Currency": "USD",
+            "Description": "Annual SaaS License - Enterprise Plan; Data Migration & Onboarding Service (12 hours); Custom API Integration Development (8 hours); Priority Technical Support (Q1 2025)",
+            "Confidence": {
+                "overall": 1.0,
+                "transactor": 1.0,
+                "expense_category": 0.95,
+                "kind_of_transaction": 0.9,
+                "vat": 1.0,
+                "invoice_number": 1.0,
+                "date": 1.0,
+                "amount": 1.0,
+                "tax_amount": 1.0,
+                "total_amount": 1.0,
+                "currency": 1.0,
+                "description": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 37,
+        "invoice_number": "CW-2025-1203",
+        "invoice_date": "2025-02-03",
+        "supplier_name": "CloudWare Inc.",
+        "category": "Software and SaaS Services",
+        "categories": [
+            "Software and SaaS Services"
+        ],
+        "transaction_type": "EXP. other countries",
+        "vat_number": "82-1234567",
+        "amount": 8520.89,
+        "vat_amount": 0.0,
+        "total_bgn": 2373067.8649999998,
+        "total_euro": 2373067.8649999998,
+        "currency": "USD",
+        "notes": "Extracted from invoice_cloudware_usd.pdf",
+        "description": "Annual SaaS License - Enterprise Plan; Data Migration & Onboarding Service (12 hours); Custom API Integration Development (8 hours); Priority Technical Support (Q1 2025)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_cloudware_usd.pdf",
+        "raw_extraction": {
+            "Transactor": "CloudWare Inc.",
+            "Expense Category Account": "Software and SaaS Services",
+            "Kind of Transaction": "EXP. other countries",
+            "VAT": "82-1234567",
+            "Invoice Number": "CW-2025-1203",
+            "Invoice Date": "2025-02-03",
+            "Amount": 8520.89,
+            "Tax Amount": 0.0,
+            "Total Amount": 8520.89,
+            "Currency": "USD",
+            "Description": "Annual SaaS License - Enterprise Plan; Data Migration & Onboarding Service (12 hours); Custom API Integration Development (8 hours); Priority Technical Support (Q1 2025)",
+            "Confidence": {
+                "overall": 1.0,
+                "transactor": 1.0,
+                "expense_category": 0.95,
+                "kind_of_transaction": 0.9,
+                "vat": 1.0,
+                "invoice_number": 1.0,
+                "date": 1.0,
+                "amount": 1.0,
+                "tax_amount": 1.0,
+                "total_amount": 1.0,
+                "currency": 1.0,
+                "description": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 43,
+        "invoice_number": "CW-2025-1203",
+        "invoice_date": "2025-02-03",
+        "supplier_name": "CloudWare Inc.",
+        "category": "Software and SaaS Services",
+        "categories": [
+            "Software and SaaS Services"
+        ],
+        "transaction_type": "EXP. other countries",
+        "vat_number": "82-1234567",
+        "amount": 8520.89,
+        "vat_amount": 0.0,
+        "total_bgn": 2373067.8649999998,
+        "total_euro": 2373067.8649999998,
+        "currency": "USD",
+        "notes": "Extracted from invoice_cloudware_usd.pdf",
+        "description": "Annual SaaS License - Enterprise Plan; Data Migration & Onboarding Service; Custom API Integration Development; Priority Technical Support (Q1 2025)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_cloudware_usd.pdf",
+        "raw_extraction": {
+            "Transactor": "CloudWare Inc.",
+            "Expense Category Account": "Software",
+            "Kind of Transaction": "PAYMENT",
+            "VAT": null,
+            "Invoice Number": "CW-2025-1203",
+            "Invoice Date": "2025-02-03",
+            "Amount": 8520.89,
+            "Tax Amount": 0.0,
+            "Total Amount": 8520.89,
+            "Currency": "USD",
+            "Description": "Annual SaaS License - Enterprise Plan; Data Migration & Onboarding Service; Custom API Integration Development; Priority Technical Support (Q1 2025)"
+        }
+    },
+    {
         "invoice_id": 26,
+        "invoice_number": "KDS-2025-0312",
+        "invoice_date": "2025-01-28",
+        "supplier_name": "Karachi Digital Services",
+        "category": "Software & Digital Services",
+        "categories": [
+            "Software & Digital Services"
+        ],
+        "transaction_type": "EXPENSES with VAT",
+        "vat_number": "17-00-4821-375-19",
+        "amount": 435500.0,
+        "vat_amount": 74035.0,
+        "total_bgn": 509535.0,
+        "total_euro": 509535.0,
+        "currency": "PKR",
+        "notes": "Extracted from invoice_karachi_digital_pkr.pdf",
+        "description": "Website Design & Development, Mobile App UI/UX Design, SEO Optimization Package (3 months), Social Media Management (Jan 2025), Domain & Hosting (Annual)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_karachi_digital_pkr.pdf",
+        "raw_extraction": {
+            "Transactor": "Karachi Digital Services",
+            "Expense Category Account": "Software & Digital Services",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "17-00-4821-375-19",
+            "Invoice Number": "KDS-2025-0312",
+            "Invoice Date": "2025-01-28",
+            "Amount": 435500,
+            "Tax Amount": 74035,
+            "Total Amount": 509535,
+            "Currency": "PKR",
+            "Description": "Website Design & Development, Mobile App UI/UX Design, SEO Optimization Package (3 months), Social Media Management (Jan 2025), Domain & Hosting (Annual)",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 32,
+        "invoice_number": "KDS-2025-0312",
+        "invoice_date": "2025-01-28",
+        "supplier_name": "Karachi Digital Services",
+        "category": "Software & Digital Services",
+        "categories": [
+            "Software & Digital Services"
+        ],
+        "transaction_type": "EXPENSES with VAT",
+        "vat_number": "17-00-4821-375-19",
+        "amount": 435500.0,
+        "vat_amount": 74035.0,
+        "total_bgn": 509535.0,
+        "total_euro": 509535.0,
+        "currency": "PKR",
+        "notes": "Extracted from invoice_karachi_digital_pkr.pdf",
+        "description": "Website Design & Development, Mobile App UI/UX Design, SEO Optimization Package (3 months), Social Media Management (Jan 2025), Domain & Hosting (Annual)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_karachi_digital_pkr.pdf",
+        "raw_extraction": {
+            "Transactor": "Karachi Digital Services",
+            "Expense Category Account": "Software & Digital Services",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "17-00-4821-375-19",
+            "Invoice Number": "KDS-2025-0312",
+            "Invoice Date": "2025-01-28",
+            "Amount": 435500,
+            "Tax Amount": 74035,
+            "Total Amount": 509535,
+            "Currency": "PKR",
+            "Description": "Website Design & Development, Mobile App UI/UX Design, SEO Optimization Package (3 months), Social Media Management (Jan 2025), Domain & Hosting (Annual)",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 38,
         "invoice_number": "KDS-2025-0312",
         "invoice_date": "2025-01-28",
         "supplier_name": "Karachi Digital Services",
@@ -291,6 +781,80 @@
                 "amount": 1.0,
                 "date": 1.0
             }
+        }
+    },
+    {
+        "invoice_id": 34,
+        "invoice_number": "TS-2025-0847",
+        "invoice_date": "2025-01-15",
+        "supplier_name": "TechSolutions GmbH",
+        "category": "Server Hosting",
+        "categories": [
+            "Server Hosting"
+        ],
+        "transaction_type": "REFUND",
+        "vat_number": "DE298745612",
+        "amount": 7124.0,
+        "vat_amount": 1353.56,
+        "total_bgn": 2377955.58,
+        "total_euro": 2377955.58,
+        "currency": "EUR",
+        "notes": "Extracted from invoice_techsolutions_eur.pdf",
+        "description": "Cloud Infrastructure Setup & Configuration; Backend API Development (Flask/Python); AI Model Integration & Testing; Monthly Server Hosting (Jan 2025)",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_techsolutions_eur.pdf",
+        "raw_extraction": {
+            "Transactor": "TechSolutions GmbH",
+            "Expense Category Account": "IT Services & Software Development",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "DE298745612",
+            "Invoice Number": "TS-2025-0847",
+            "Invoice Date": "2025-01-15",
+            "Amount": "7124.00",
+            "Tax Amount": "1353.56",
+            "Total Amount": "8477.56",
+            "Currency": "EUR",
+            "Description": "Cloud Infrastructure Setup & Configuration; Backend API Development (Flask/Python); AI Model Integration & Testing; Monthly Server Hosting (Jan 2025)",
+            "Confidence": {
+                "overall": 1.0,
+                "invoice_number": 1.0,
+                "amount": 1.0,
+                "date": 1.0
+            }
+        }
+    },
+    {
+        "invoice_id": 40,
+        "invoice_number": "TS-2025-0847",
+        "invoice_date": "2025-01-15",
+        "supplier_name": "TechSolutions GmbH",
+        "category": "Server Hosting",
+        "categories": [
+            "Server Hosting"
+        ],
+        "transaction_type": "REFUND",
+        "vat_number": "DE298745612",
+        "amount": 7124.0,
+        "vat_amount": 1353.56,
+        "total_bgn": 2377955.58,
+        "total_euro": 2377955.58,
+        "currency": "EUR",
+        "notes": "Extracted from invoice_techsolutions_eur.pdf",
+        "description": "Cloud Infrastructure Setup & Configuration; Backend API Development (Flask/Python); AI Model Integration & Testing; Monthly Server Hosting",
+        "is_income": 0,
+        "file_path": "uploads\\invoice_techsolutions_eur.pdf",
+        "raw_extraction": {
+            "Transactor": "TechSolutions GmbH",
+            "Expense Category Account": "IT Services and Cloud Infrastructure",
+            "Kind of Transaction": "EXPENSES with VAT",
+            "VAT": "DE298745612",
+            "Invoice Number": "TS-2025-0847",
+            "Invoice Date": "2025-01-15",
+            "Amount": 7124,
+            "Tax Amount": 1353.56,
+            "Total Amount": 8477.56,
+            "Currency": "EUR",
+            "Description": "Cloud Infrastructure Setup & Configuration; Backend API Development (Flask/Python); AI Model Integration & Testing; Monthly Server Hosting"
         }
     }
 ]
